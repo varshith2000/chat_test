@@ -1,0 +1,231 @@
+/* App container */
+.App {
+  text-align: center;
+  padding: 20px;
+}
+
+/* Chat container styling */
+.chat-container {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 1000;
+}
+
+/* Chat interface styling */
+.chat-interface {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  width: 320px;
+  font-size: 14px;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-interface.enlarged {
+  width: 400px;
+  height: 600px;
+}
+
+.chat-header {
+  background-color: #3b82f6;
+  color: #ffffff;
+  padding: 12px 16px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.chat-header .user-info {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.chat-body {
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.chat-message {
+  margin-bottom: 16px;
+}
+
+.chat-message.user {
+  text-align: right;
+}
+
+.chat-message .bubble {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 8px;
+  max-width: 80%;
+}
+
+.chat-message.bot .bubble {
+  background-color: #e5e7eb;
+  color: #1f2937;
+}
+
+.chat-message.user .bubble {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+
+.chat-footer {
+  border-top: 1px solid #e5e7eb;
+  padding: 12px 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.chat-footer input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  outline: none;
+}
+
+.chat-footer button {
+  background-color: #3b82f6;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.chat-footer button:hover {
+  background-color: #2563eb;
+}
+
+/* Login form styling */
+.login-form {
+  padding: 16px;
+}
+
+.login-form h3 {
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.login-form label {
+  display: block;
+  font-size: 12px;
+  font-weight: medium;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.login-form button {
+  width: 100%;
+  background-color: #3b82f6;
+  color: #ffffff;
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.login-form button:hover {
+  background-color: #2563eb;
+}
+
+/* User data form styling */
+.user-data-form {
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 12px;
+  background-color: #f9fafb;
+}
+
+.user-data-form h4 {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.user-data-form label {
+  display: block;
+  font-size: 12px;
+  font-weight: medium;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.user-data-form input,
+.user-data-form textarea,
+.user-data-form select {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.user-data-form button {
+  width: 100%;
+  background-color: #3b82f6;
+  color: #ffffff;
+  padding: 6px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.user-data-form button:hover {
+  background-color: #2563eb;
+}
+
+/* Chat bubble button */
+.chat-bubble {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.chat-bubble:hover {
+  background-color: #2563eb;
+}
+
+/* Enlarge button styles */
+.enlarge-button {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: auto;
+}
+
+.enlarge-button:hover {
+  color: #2563eb;
+}
