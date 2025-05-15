@@ -3,8 +3,8 @@ class ProductionStage extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this.stageIndex = parseInt(this.getAttribute('stage-index') || '0');
+    this.stageCount = parseInt(this.getAttribute('stage-count') || '1');
     this.initialData = JSON.parse(this.getAttribute('initial-data') || '{}');
-    this.isLast = this.getAttribute('is-last') === 'true';
     this.goodsList = ['Flour', 'Sugar', 'Oil'];
     this.rawGoods = this.initialData.rawGoods || [{ name: '', qty: '', dimension: '' }];
     this.outputGoods = this.initialData.outputGoods || [{ name: '', qty: '', dimension: '' }];
@@ -16,18 +16,18 @@ class ProductionStage extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['stage-index', 'initial-data', 'is-last'];
+    return ['stage-index', 'initial-data', 'stage-count'];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (name === 'stage-index') this.stageIndex = parseInt(newValue || '0');
+    else if (name === 'stage-count') this.stageCount = parseInt(newValue || '1');
     else if (name === 'initial-data') {
       this.initialData = JSON.parse(newValue || '{}');
       this.rawGoods = this.initialData.rawGoods || [{ name: '', qty: '', dimension: '' }];
       this.outputGoods = this.initialData.outputGoods || [{ name: '', qty: '', dimension: '' }];
       this.middleFields = this.initialData.middleFields || { wastageEntries: [{ good: '', wastage: '', type: 'percent' }], time: '', outsource: 'no' };
     }
-    else if (name === 'is-last') this.isLast = newValue === 'true';
     this.render();
   }
 
@@ -81,10 +81,10 @@ class ProductionStage extends HTMLElement {
           align-items: flex-start;
           position: relative;
           padding: 32px 0;
-          background: #fcfcf7;
+          background: #fff;
           border-radius: 16px;
-          border: 1.5px solid #e0d7b6;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+          border: 1.5px solid #88bfe8;
+          box-shadow: 0 2px 8px rgba(136,191,232,0.08);
           flex-wrap: wrap;
           min-width: 0;
           width: 100%;
@@ -104,7 +104,7 @@ class ProductionStage extends HTMLElement {
         }
         .section h3 {
           text-align: center;
-          color: #6b8e23;
+          color: #340368;
           margin-bottom: 16px;
           font-weight: 700;
           white-space: nowrap;
@@ -118,105 +118,157 @@ class ProductionStage extends HTMLElement {
           background: #fff;
           border-radius: 10px;
           padding: 16px;
-          border: 1px solid #e0d7b6;
+          border: 1px solid #88bfe8;
           min-width: 0;
           overflow: hidden;
         }
         .add-button {
-          align-self: flex-start;
-          background: #f0f0f0;
-          border: 1px dashed #6b8e23;
-          border-radius: 4px;
-          padding: 8px 16px;
-          cursor: pointer;
-          color: #6b8e23;
-          margin-top: 8px;
+          background: #ffffff; /* White background */
+          border: 1px dashed #88bfe8; /* Light blue border */
+          color: #340368; /* Dark purple */
         }
         .footer {
           text-align: center;
           margin-top: 32px;
         }
         .error-message {
-          color: #d32f2f;
-          margin-bottom: 16px;
-          padding: 8px;
-          background: #ffebee;
+          background: #ffffff; /* White background */
+          color: #340368; /* Dark purple */
+          border: 1px solid #88bfe8;
           border-radius: 4px;
+          padding: 8px;
         }
         .finish-button {
-          background: ${this.showErrors && Object.keys(this.validationErrors).length > 0 ? '#b5b5b5' : '#6b8e23'};
-          color: #fff;
+          background: #88bfe8; /* Light blue */
+          color: #ffffff; /* White text */
+        }
+        .stage-header {
+          background-color: #ffffff; /* White background */
+          color: #340368; /* Dark purple text */
+          padding: 16px;
+          border-radius: 10px 10px 0 0;
+          text-align: center;
+          border-bottom: 1px solid #88bfe8; /* Light blue border */
+        }
+        .button-primary {
+          background-color: #0056b3; /* Primary blue */
+          color: #ffffff; /* White text */
           border: none;
-          border-radius: 8px;
-          padding: 10px 32px;
-          font-size: 1.1rem;
-          cursor: ${this.showErrors && Object.keys(this.validationErrors).length > 0 ? 'not-allowed' : 'pointer'};
-          transition: all 0.2s ease;
+          border-radius: 4px;
+          padding: 10px 20px;
+          cursor: pointer;
+          font-size: 1rem;
+          transition: background-color 0.2s ease;
+        }
+        .button-primary:hover {
+          background-color: #004494; /* Darker blue on hover */
+        }
+        .stage-container {
+          margin: 32px auto;
+          max-width: 1400px;
+        }
+        .header {
+          background: #ffffff;
+          border-radius: 16px 16px 0 0;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+          padding: 24px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .header h2 {
+          color: #340368; /* Dark purple */
+          margin: 0;
+        }
+        .action-buttons {
+          display: flex;
+          gap: 12px;
+        }
+        .button {
+          background: #88bfe8; /* Light blue */
+          color: #ffffff; /* White text */
+          border: none;
+          border-radius: 6px;
+          padding: 8px 16px;
+          cursor: pointer;
+          font-size: 0.9rem;
+          display: flex;
+          align-items: center;
+          transition: background-color 0.3s;
+        }
+        .button:hover {
+          background: #340368; /* Dark purple */
         }
       </style>
-      <form class="form">
-        <div class="container">
-          <!-- Raw/Intermediate Goods -->
-          <div class="section">
-            <h3>Raw/Intermediate Goods</h3>
-            <div class="inner-section">
-              ${this.rawGoods.map((row, idx) => `
-                <goods-input-row
-                  goods-list='${JSON.stringify(this.goodsList)}'
-                  value='${JSON.stringify(row)}'
-                  allow-remove="${this.rawGoods.length > 1}"
-                  show-dimension="true"
-                  error="${this.showErrors && this.validationErrors.rawGoods?.find(err => err.startsWith(`Row ${idx + 1}:`)) || ''}"
-                  data-idx="${idx}"
-                  data-type="raw"
-                ></goods-input-row>
-              `).join('')}
-              <button type="button" class="add-button" id="add-raw">+ Add Raw Good</button>
+      <div class="stage-container">
+        <form class="form">
+          <div class="container">
+            <!-- Raw/Intermediate Goods -->
+            <div class="section">
+              <h3>Raw/Intermediate Goods</h3>
+              <div class="inner-section">
+                ${this.rawGoods.map((row, idx) => `
+                  <goods-input-row
+                    goods-list='${JSON.stringify(this.goodsList)}'
+                    value='${JSON.stringify(row)}'
+                    allow-remove="${this.rawGoods.length > 1}"
+                    show-dimension="true"
+                    error="${this.showErrors && this.validationErrors.rawGoods?.find(err => err.startsWith(`Row ${idx + 1}:`)) || ''}"
+                    data-idx="${idx}"
+                    data-type="raw"
+                  ></goods-input-row>
+                `).join('')}
+                <button type="button" class="add-button" id="add-raw">+ Add Raw Good</button>
+              </div>
+            </div>
+            <!-- Production Details -->
+            <div class="section middle">
+              <h3>Production Details</h3>
+              <div class="inner-section">
+                <wastage-fields
+                  value='${JSON.stringify(this.middleFields)}'
+                  wastage-goods='${JSON.stringify(selectedRawGoods)}'
+                  errors='${JSON.stringify(this.showErrors ? this.validationErrors : {})}'
+                ></wastage-fields>
+              </div>
+            </div>
+            <!-- Output Goods -->
+            <div class="section">
+              <h3>Output Goods</h3>
+              <div class="inner-section">
+                ${this.outputGoods.map((row, idx) => `
+                  <goods-input-row
+                    goods-list='${JSON.stringify(this.goodsList)}'
+                    value='${JSON.stringify(row)}'
+                    allow-remove="${this.outputGoods.length > 1}"
+                    show-dimension="true"
+                    error="${this.showErrors && this.validationErrors.outputGoods?.find(err => err.startsWith(`Row ${idx + 1}:`)) || ''}"
+                    data-idx="${idx}"
+                    data-type="output"
+                  ></goods-input-row>
+                `).join('')}
+                <button type="button" class="add-button" id="add-output">+ Add Output Good</button>
+              </div>
             </div>
           </div>
-          <!-- Production Details -->
-          <div class="section middle">
-            <h3>Production Details</h3>
-            <div class="inner-section">
-              <wastage-fields
-                value='${JSON.stringify(this.middleFields)}'
-                wastage-goods='${JSON.stringify(selectedRawGoods)}'
-                errors='${JSON.stringify(this.showErrors ? this.validationErrors : {})}'
-              ></wastage-fields>
-            </div>
-          </div>
-          <!-- Output Goods -->
-          <div class="section">
-            <h3>Output Goods</h3>
-            <div class="inner-section">
-              ${this.outputGoods.map((row, idx) => `
-                <goods-input-row
-                  goods-list='${JSON.stringify(this.goodsList)}'
-                  value='${JSON.stringify(row)}'
-                  allow-remove="${this.outputGoods.length > 1}"
-                  show-dimension="true"
-                  error="${this.showErrors && this.validationErrors.outputGoods?.find(err => err.startsWith(`Row ${idx + 1}:`)) || ''}"
-                  data-idx="${idx}"
-                  data-type="output"
-                ></goods-input-row>
-              `).join('')}
-              <button type="button" class="add-button" id="add-output">+ Add Output Good</button>
-            </div>
-          </div>
-        </div>
-        ${this.isLast ? `
           <div class="footer">
             ${this.showErrors && Object.keys(this.validationErrors).length > 0 ? `
               <div class="error-message">Please fix the validation errors before proceeding</div>
             ` : ''}
-            <button type="submit" class="finish-button">Finish</button>
           </div>
-        ` : ''}
-        <confirmation-modal
-          open="${this.modal.open}"
-          good-name="${this.modal.goodName}"
-        ></confirmation-modal>
-      </form>
+          ${this.stageIndex === parseInt(this.getAttribute('stage-count')) - 1 ? `
+            <div style="text-align: center; margin-top: 32px; padding: 16px;">
+              <button type="submit" class="button-primary submit-workflow">
+                Submit Production Workflow
+              </button>
+            </div>
+          ` : ''}
+          <confirmation-modal
+            open="${this.modal.open}"
+            good-name="${this.modal.goodName}"
+          ></confirmation-modal>
+        </form>
+      </div>
     `;
 
     this.shadowRoot.querySelectorAll('goods-input-row').forEach(row => {
@@ -287,8 +339,15 @@ class ProductionStage extends HTMLElement {
       this.showErrors = true;
       const isValid = this.validateForm();
       if (isValid) {
+        const stageData = {
+          rawGoods: this.rawGoods,
+          outputGoods: this.outputGoods,
+          middleFields: this.middleFields
+        };
+        // Debug log
+        console.log('Submitting stage data:', stageData);
         this.dispatchEvent(new CustomEvent('complete', {
-          detail: { rawGoods: this.rawGoods, outputGoods: this.outputGoods, middleFields: this.middleFields },
+          detail: stageData,
           bubbles: true,
           composed: true
         }));

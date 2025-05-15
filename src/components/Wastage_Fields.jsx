@@ -75,26 +75,26 @@ class WastageFields extends HTMLElement {
         }
         .label {
           font-size: 1rem;
-          color: #6b8e23;
+          color: #340368;
           font-family: 'Caveat', cursive;
         }
         .input, .select {
           flex: 1;
           padding: 6px 10px;
           border-radius: 6px;
-          border: 1px solid #e0d7b6;
+          border: 1px solid #88bfe8;
           font-size: 1rem;
         }
         .input:focus, .select:focus {
           outline: none;
-          border-color: #6b8e23;
+          border-color: #340368;
         }
         .input.has-error, .select.has-error {
-          border-color: #d32f2f;
+          border-color: #340368;
         }
         .button {
-          background: #f7c873;
-          color: #6b8e23;
+          background: #88bfe8;
+          color: #ffffff;
           border: none;
           border-radius: 6px;
           padding: 6px 12px;
@@ -102,10 +102,10 @@ class WastageFields extends HTMLElement {
           cursor: pointer;
         }
         .button:hover {
-          background: #ffe2a9;
+          background: #340368;
         }
         .error-text {
-          color: #d32f2f;
+          color: #340368;
           font-size: 0.75rem;
           padding-left: 4px;
         }
@@ -114,7 +114,7 @@ class WastageFields extends HTMLElement {
           flex-direction: column;
           gap: 8px;
           padding: 12px;
-          border: 1px solid #e0d7b6;
+          border: 1px solid #88bfe8;
           border-radius: 8px;
           margin-bottom: 12px;
           position: relative;
@@ -123,8 +123,8 @@ class WastageFields extends HTMLElement {
           position: absolute;
           top: 8px;
           right: 8px;
-          background: #d32f2f;
-          color: white;
+          background: #88bfe8;
+          color: #fff;
           border: none;
           border-radius: 4px;
           width: 24px;
@@ -136,7 +136,7 @@ class WastageFields extends HTMLElement {
           font-size: 16px;
         }
         .remove-button:hover {
-          background: #b71c1c;
+          background: #340368;
         }
       </style>
       <div class="middle-container">

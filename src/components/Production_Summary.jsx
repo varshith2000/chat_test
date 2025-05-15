@@ -2,7 +2,18 @@ class ProductionSummary extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this.stages = JSON.parse(this.getAttribute('stages') || '[]');
+    this.stages = [];
+    try {
+      const stagesAttr = this.getAttribute('stages');
+      if (stagesAttr) {
+        const parsed = JSON.parse(stagesAttr);
+        this.stages = Array.isArray(parsed) ? parsed : [];
+        console.log('Parsed stages:', this.stages); // Debug log
+      }
+    } catch (error) {
+      console.error('Error parsing stages:', error);
+      this.stages = [];
+    }
     this.render();
   }
 
@@ -11,8 +22,17 @@ class ProductionSummary extends HTMLElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if (name === 'stages') this.stages = JSON.parse(newValue || '[]');
-    this.render();
+    if (name === 'stages' && newValue !== oldValue) {
+      try {
+        const parsed = JSON.parse(newValue || '[]');
+        this.stages = Array.isArray(parsed) ? parsed : [];
+        console.log('Updated stages:', this.stages); // Debug log
+      } catch (error) {
+        console.error('Error parsing stages:', error);
+        this.stages = [];
+      }
+      this.render();
+    }
   }
 
   render() {
@@ -23,16 +43,16 @@ class ProductionSummary extends HTMLElement {
           max-width: 1400px;
         }
         .header {
-          background: #fffbe6;
+          background: #ffffff;
           border-radius: 16px 16px 0 0;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+          box-shadow: 0 2px 8px rgba(52,3,104,0.08);
           padding: 24px;
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
         .header h2 {
-          color: #6b8e23;
+          color: #340368; /* Dark purple */
           margin: 0;
         }
         .action-buttons {
@@ -40,8 +60,8 @@ class ProductionSummary extends HTMLElement {
           gap: 12px;
         }
         .button {
-          background: #6b8e23;
-          color: #fff;
+          background: #88bfe8; /* Light blue */
+          color: #ffffff; /* White text */
           border: none;
           border-radius: 6px;
           padding: 8px 16px;
@@ -49,23 +69,14 @@ class ProductionSummary extends HTMLElement {
           font-size: 0.9rem;
           display: flex;
           align-items: center;
-          gap: 6px;
-          transition: all 0.2s ease;
-        }
-        .button.secondary {
-          background: #f0f0f0;
-          color: #666;
-          border: 1px solid #ddd;
+          transition: background-color 0.3s;
         }
         .button:hover {
-          background: #597a1d;
-        }
-        .button.secondary:hover {
-          background: #e0e0e0;
+          background: #340368; /* Dark purple */
         }
         .stage-detail {
           margin-bottom: 32px;
-          border-bottom: 1px solid #e0d7b6;
+          border-bottom: 1px solid #88bfe8;
           padding-bottom: 16px;
         }
         .stage-detail.last {
@@ -80,25 +91,26 @@ class ProductionSummary extends HTMLElement {
           padding: 8px;
         }
         .edit-button {
-          background: none;
+          background: #88bfe8;
           border: none;
           cursor: pointer;
           font-size: 1.1rem;
           padding: 4px 8px;
           border-radius: 4px;
-          color: #6b8e23;
+          color: #fff;
           display: flex;
           align-items: center;
           gap: 4px;
+          transition: background 0.3s;
         }
         .edit-button:hover {
-          background: #f0f0f0;
+          background: #340368;
         }
         .details-container {
           background: #fff;
           padding: 24px;
           border-radius: 0 0 16px 16px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+          box-shadow: 0 2px 8px rgba(136,191,232,0.08); /* Use light blue for shadow */
         }
         .grid {
           display: grid;
@@ -107,33 +119,30 @@ class ProductionSummary extends HTMLElement {
           margin-top: 12px;
         }
         .section {
-          background: #f8faf4;
-          padding: 12px;
-          border-radius: 8px;
+          background: #ffffff; /* White background */
+          border: 1px solid #88bfe8; /* Light blue border */
         }
         .section h4 {
-          color: #6b8e23;
-          margin-bottom: 8px;
+          color: #340368; /* Dark purple */
         }
         .item {
           margin-bottom: 8px;
           padding: 8px;
-          background: #fff;
-          border-radius: 4px;
-          border: 1px solid #e0d7b6;
+          background: #ffffff; /* White background */
+          border: 1px solid #88bfe8; /* Light blue border */
         }
         .item.wastage {
-          border-color: #f7c873;
+          border-color: #88bfe8; /* Light blue */
         }
         .item.output {
-          border-color: #6b8e23;
+          border-color: #340368; /* Dark purple */
         }
         .item .title {
           font-weight: 600;
         }
         .item .content {
           font-size: 0.9rem;
-          color: #666;
+          color: #340368;
         }
       </style>
       <div class="summary-container">
@@ -150,7 +159,7 @@ class ProductionSummary extends HTMLElement {
         </div>
         <stage-flow stages='${JSON.stringify(this.stages)}'></stage-flow>
         <div class="details-container">
-          <h3 style="color: #6b8e23; margin-bottom: 16px;">Stage Details</h3>
+          <h3 style="color: #340368; margin-bottom: 16px;">Stage Details</h3>
           ${(this.stages || []).map((stage, idx) => `
             <div class="stage-detail ${idx === (this.stages?.length || 0) - 1 ? 'last' : ''}">
               <div class="edit-controls">

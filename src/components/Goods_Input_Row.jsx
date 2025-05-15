@@ -41,50 +41,33 @@ class GoodsInputRow extends HTMLElement {
           gap: 8px;
         }
         .select, .input, .dimension-select {
-          padding: 6px 10px;
-          border-radius: 6px;
-          border: 1px solid ${hasError ? '#d32f2f' : '#e0d7b6'};
-          font-size: 1rem;
+          border: 1px solid #88bfe8; /* Light blue border */
         }
         .select:focus, .input:focus, .dimension-select:focus {
-          outline: none;
-          border-color: ${hasError ? '#d32f2f' : '#6b8e23'};
+          border-color: #340368; /* Dark purple */
         }
-        .select, .dimension-select {
-          flex: 2;
-          margin-right: 10px;
+        .add-button {
+          background: #ffffff; /* White background */
+          border: 1px dashed #88bfe8; /* Light blue border */
+          color: #340368; /* Dark purple */
         }
-        .input {
-          flex: 1;
-          margin-right: 10px;
-        }
-        .select-container, .input-container, .dimension-container {
-          min-width: 140px;
-        }
-        .input-container, .dimension-container {
-          min-width: 80px;
-        }
-        .select-container select, .input-container input, .dimension-container select {
-          width: 100%;
+        .input-row {
+          border-color: #88bfe8; /* Light blue border */
         }
         .button {
-          background: #f7c873;
-          color: #6b8e23;
+          background-color: #88bfe8; /* Light blue */
+          color: #ffffff; /* White text */
           border: none;
           border-radius: 6px;
-          padding: 6px 12px;
+          padding: 8px 16px;
           font-size: 1rem;
           cursor: pointer;
-          margin-left: 4px;
+          margin-top: 10px;
+          transition: background-color 0.3s;
         }
         .button:hover {
-          background: #ffe2a9;
-        }
-        .error-text {
-          color: #d32f2f;
-          font-size: 0.75rem;
-          margin-top: 4px;
-          padding-left: 4px;
+          background-color: #340368;
+          color: #fff;
         }
       </style>
       <div class="row">
@@ -166,6 +149,8 @@ class GoodsInputRow extends HTMLElement {
       });
     }
   }
+
+  // Removed submit workflow button as it's now handled in the chat component
 }
 
 customElements.define('goods-input-row', GoodsInputRow);

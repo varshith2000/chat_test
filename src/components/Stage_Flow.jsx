@@ -81,32 +81,20 @@ class StageFlow extends HTMLElement {
           position: relative;
         }
         .card {
-          background: white;
-          border: 2px solid #e0d7b6;
-          border-radius: 8px;
-          padding: 16px;
-          min-width: 180px;
-          min-height: 60px;
-          position: relative;
-          z-index: 2;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+          background: #ffffff; /* White background */
+          border: 1px solid #88bfe8; /* Light blue border */
         }
-        .card.wastage {
-          border-color: #f7c873;
-          background: #fffbf4;
-        }
-        .card.output {
-          border-color: #6b8e23;
-          background: #f8faf4;
+        .arrow {
+          stroke: #88bfe8; /* Light blue */
         }
         .card-title {
           font-weight: 600;
-          color: #6b8e23;
+          color: #340368; /* Dark purple */
           margin-bottom: 8px;
         }
         .card-content {
           font-size: 0.9rem;
-          color: #666;
+          color: #340368;
         }
       </style>
       <div class="flow-container">
@@ -122,7 +110,7 @@ class StageFlow extends HTMLElement {
                 arrowHTML += this.renderArrow(
                   this.getCardPos(0, i),
                   this.getCardPos(1, j),
-                  '#e0d7b6',
+                  '#88bfe8', // Light blue
                   2,
                   false,
                   `inw-${stageIdx}-${i}-${j}`
@@ -136,7 +124,7 @@ class StageFlow extends HTMLElement {
               arrowHTML += this.renderArrow(
                 this.getCardPos(1, j),
                 this.getCardPos(2, k),
-                '#f7c873',
+                '#340368', // Dark purple
                 2,
                 false,
                 `wout-${stageIdx}-${j}-${k}`
@@ -148,7 +136,7 @@ class StageFlow extends HTMLElement {
             arrowHTML += this.renderArrow(
               this.getCardPos(2, outputGoods.length - 1),
               this.getCardPos(0, 0),
-              '#bbb',
+              '#88bfe8', // Light blue
               3,
               true,
               `stage-${stageIdx}`
@@ -157,7 +145,7 @@ class StageFlow extends HTMLElement {
           return `
             <div style="position: relative; margin-bottom: ${stageIdx < this.stages.length - 1 ? '80px' : '0'};">
               <div style="text-align: center; margin-bottom: 24px;">
-                <div style="font-size: 1.3rem; font-weight: 700; color: #6b8e23; font-family: 'Caveat', cursive; letter-spacing: 1px; margin-bottom: 0;">
+                <div style="font-size: 1.3rem; font-weight: 700; color: #340368; font-family: 'Caveat', cursive; letter-spacing: 1px; margin-bottom: 0;">
                   Stage ${stageIdx + 1}
                 </div>
               </div>

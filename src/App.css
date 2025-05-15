@@ -1,10 +1,11 @@
-/* App container */
+/* Updated colors and shadows to ensure white backgrounds and specified border colors */
+
 .App {
   text-align: center;
   padding: 20px;
+  background-color: #ffffff; /* White background */
 }
 
-/* Chat container styling */
 .chat-container {
   position: fixed;
   bottom: 1rem;
@@ -12,11 +13,11 @@
   z-index: 1000;
 }
 
-/* Chat interface styling */
 .chat-interface {
-  background-color: #ffffff;
+  background-color: #ffffff; /* White background */
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #88bfe8; /* Light blue border */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
   overflow: hidden;
   width: 320px;
   font-size: 14px;
@@ -31,8 +32,9 @@
 }
 
 .chat-header {
-  background-color: #3b82f6;
-  color: #ffffff;
+  background-color: #ffffff; /* White background */
+  color: #340368; /* Dark purple text */
+  border-bottom: 1px solid #88bfe8; /* Light blue border */
   padding: 12px 16px;
   font-weight: bold;
   display: flex;
@@ -55,6 +57,7 @@
   padding: 16px;
   flex: 1;
   overflow-y: auto;
+  background-color: #ffffff; /* White background */
 }
 
 .chat-message {
@@ -70,106 +73,116 @@
   padding: 8px 12px;
   border-radius: 8px;
   max-width: 80%;
-}
-
-.chat-message.bot .bubble {
-  background-color: #e5e7eb;
-  color: #1f2937;
-}
-
-.chat-message.user .bubble {
-  background-color: #3b82f6;
-  color: #ffffff;
+  background-color: #ffffff; /* White background */
+  border: 1px solid #88bfe8; /* Light blue border */
+  color: #340368; /* Dark purple text */
 }
 
 .chat-footer {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #88bfe8; /* Light blue border */
   padding: 12px 16px;
   display: flex;
   gap: 8px;
+  background-color: #ffffff; /* White background */
 }
 
 .chat-footer input {
   flex: 1;
   padding: 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #88bfe8; /* Light blue border */
   border-radius: 4px;
   outline: none;
+  background-color: #ffffff; /* White background */
 }
 
 .chat-footer button {
-  background-color: #3b82f6;
-  color: #ffffff;
-  border: none;
+  background-color: #ffffff; /* White background */
+  color: #340368; /* Dark purple text */
+  border: 1px solid #88bfe8; /* Light blue border */
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
 }
 
 .chat-footer button:hover {
-  background-color: #2563eb;
+  background-color: #88bfe8; /* Light blue */
+  color: #ffffff; /* White text */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow */
 }
 
 /* Login form styling */
 .login-form {
   padding: 16px;
+  background-color: #ffffff; /* White background */
+  border: 1px solid #88bfe8; /* Light blue border */
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
 }
 
 .login-form h3 {
   font-size: 18px;
   margin-bottom: 16px;
+  color: #340368; /* Dark purple text */
 }
 
 .login-form label {
   display: block;
   font-size: 12px;
   font-weight: medium;
-  color: #374151;
+  color: #340368; /* Dark purple text */
   margin-bottom: 4px;
 }
 
 .login-form input {
   width: 100%;
   padding: 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #88bfe8; /* Light blue border */
   border-radius: 4px;
   margin-bottom: 12px;
   font-size: 14px;
+  background-color: #ffffff; /* White background */
 }
 
 .login-form button {
   width: 100%;
-  background-color: #3b82f6;
-  color: #ffffff;
+  background-color: #ffffff; /* White background */
+  color: #340368; /* Dark purple text */
+  border: 1px solid #88bfe8; /* Light blue border */
   padding: 8px;
-  border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
 }
 
 .login-form button:hover {
-  background-color: #2563eb;
+  background-color: #88bfe8; /* Light blue */
+  color: #ffffff; /* White text */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow */
 }
 
 /* User data form styling */
 .user-data-form {
-  border: 1px solid #e5e7eb;
+  border: 1px solid #88bfe8; /* Light blue border */
   border-radius: 4px;
   padding: 12px;
-  background-color: #f9fafb;
+  background-color: #ffffff; /* White background */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
 }
 
 .user-data-form h4 {
   font-size: 14px;
   margin-bottom: 8px;
+  color: #340368; /* Dark purple text */
 }
 
 .user-data-form label {
   display: block;
   font-size: 12px;
   font-weight: medium;
-  color: #374151;
+  color: #340368; /* Dark purple text */
   margin-bottom: 4px;
 }
 
@@ -178,24 +191,29 @@
 .user-data-form select {
   width: 100%;
   padding: 6px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #88bfe8; /* Light blue border */
   border-radius: 4px;
   margin-bottom: 8px;
   font-size: 12px;
+  background-color: #ffffff; /* White background */
 }
 
 .user-data-form button {
   width: 100%;
-  background-color: #3b82f6;
-  color: #ffffff;
+  background-color: #ffffff; /* White background */
+  color: #340368; /* Dark purple text */
+  border: 1px solid #88bfe8; /* Light blue border */
   padding: 6px;
-  border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
 }
 
 .user-data-form button:hover {
-  background-color: #2563eb;
+  background-color: #88bfe8; /* Light blue */
+  color: #ffffff; /* White text */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow */
 }
 
 /* Chat bubble button */
@@ -203,29 +221,38 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background-color: #3b82f6;
-  color: #ffffff;
+  background-color: #ffffff; /* White background */
+  color: #340368; /* Dark purple text */
+  border: 1px solid #88bfe8; /* Light blue border */
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
   cursor: pointer;
 }
 
 .chat-bubble:hover {
-  background-color: #2563eb;
+  background-color: #88bfe8; /* Light blue */
+  color: #ffffff; /* White text */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow */
 }
 
 /* Enlarge button styles */
 .enlarge-button {
-  background: none;
-  border: none;
-  color: #ffffff;
+  background: #ffffff; /* White background */
+  border: 1px solid #88bfe8; /* Light blue border */
+  color: #340368; /* Dark purple text */
   cursor: pointer;
   font-size: 14px;
   margin-left: auto;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: background-color 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
 }
 
 .enlarge-button:hover {
-  color: #2563eb;
+  background-color: #88bfe8; /* Light blue */
+  color: #ffffff; /* White text */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow */
 }

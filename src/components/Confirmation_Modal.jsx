@@ -33,23 +33,24 @@ class ConfirmationModal extends HTMLElement {
         .modal-overlay {
           position: fixed;
           top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.25);
+          background: rgba(136,191,232,0.08);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 1000;
         }
         .modal-box {
-          background: #fffbe6;
+          background: #ffffff; /* White background */
+          border: 2px solid #88bfe8; /* Light blue border */
           border-radius: 12px;
           padding: 32px 40px;
-          box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+          box-shadow: 0 2px 16px rgba(136,191,232,0.12);
           min-width: 320px;
           text-align: center;
         }
         .button {
-          background: #6b8e23;
-          color: #fff;
+          background: #88bfe8; /* Light blue */
+          color: #ffffff; /* White text */
           border: none;
           border-radius: 8px;
           padding: 10px 24px;
@@ -59,20 +60,26 @@ class ConfirmationModal extends HTMLElement {
           transition: background 0.2s;
         }
         .button:hover {
-          background: #4e6b18;
+          background: #340368;
         }
         .button.cancel {
-          background: #ccc;
-          color: #333;
+          background: #fff;
+          color: #340368;
+          border: 1px solid #340368;
+        }
+        .button.cancel:hover {
+          background: #88bfe8;
+          color: #fff;
         }
         .button:disabled {
-          background: #b5b5b5;
+          background: #88bfe8;
+          opacity: 0.5;
           cursor: not-allowed;
         }
         input {
           padding: 8px 12px;
           border-radius: 6px;
-          border: 1px solid #e0d7b6;
+          border: 1px solid #88bfe8;
           font-size: 1rem;
           min-width: 180px;
           margin-bottom: 8px;

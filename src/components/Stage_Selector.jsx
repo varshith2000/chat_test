@@ -3,6 +3,7 @@ class StageSelector extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this.stages = 1;
+    this.isSubmitted = false; // Track if the button has been clicked
     this.render();
   }
 
@@ -15,10 +16,11 @@ class StageSelector extends HTMLElement {
           align-items: center;
           justify-content: center;
           min-height: 100vh;
-          background: #f9f7e8;
+          background: #fff;
         }
         .card {
-          background: #fffbe6;
+          background: #ffffff;
+          border: 2px solid #88bfe8;
           border-radius: 16px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.08);
           padding: 32px 40px;
@@ -36,14 +38,14 @@ class StageSelector extends HTMLElement {
           font-size: 1.1rem;
           padding: 8px 12px;
           border-radius: 8px;
-          border: 1px solid #e0d7b6;
+          border: 1px solid #88bfe8;
           margin-bottom: 20px;
           width: 80px;
           text-align: center;
         }
         .button {
-          background: #6b8e23;
-          color: #fff;
+          background: #88bfe8;
+          color: #ffffff;
           border: none;
           border-radius: 8px;
           padding: 10px 24px;
@@ -53,14 +55,19 @@ class StageSelector extends HTMLElement {
           transition: background 0.2s;
         }
         .button:hover {
-          background: #4e6b18;
+          background: #340368;
+        }
+        .button:disabled {
+          background: #88bfe8;
+          opacity: 0.5;
+          cursor: not-allowed;
         }
       </style>
       <div class="container">
         <div class="card">
           <label class="label" for="stages">How many production stages?</label>
           <input class="input" id="stages" type="number" min="1" value="${this.stages}" />
-          <button class="button">Start</button>
+          <button class="button" id="startButton" ${this.isSubmitted ? 'disabled' : ''}>Start</button>
         </div>
       </div>
     `;
@@ -69,9 +76,12 @@ class StageSelector extends HTMLElement {
       this.stages = Number(e.target.value);
     });
 
-    this.shadowRoot.querySelector('button').addEventListener('click', (e) => {
+    const startButton = this.shadowRoot.querySelector('#startButton');
+    startButton.addEventListener('click', (e) => {
       e.preventDefault();
-      if (this.stages > 0) {
+      if (this.stages > 0 && !this.isSubmitted) {
+        this.isSubmitted = true;
+        this.render(); // Re-render to disable the button
         this.dispatchEvent(new CustomEvent('select', {
           detail: { stages: this.stages },
           bubbles: true,
