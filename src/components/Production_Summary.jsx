@@ -97,10 +97,15 @@ class ProductionSummary extends HTMLElement {
           gap: 6px;
           transition: all 0.2s ease;
         }
-        .button:hover {
+        .button:hover:not([disabled]) {
           background: #cbe3f7;
           color: #340368;
           border-color: #340368;
+        }
+        .button[disabled] {
+          opacity: 0.5;
+          cursor: not-allowed;
+          pointer-events: none;
         }
         .button.primary {
           background: #340368;
@@ -322,6 +327,25 @@ class ProductionSummary extends HTMLElement {
     const submitBtn = this.shadowRoot.querySelector('#submit-workflow');
     if (submitBtn) {
       submitBtn.addEventListener('click', () => {
+        // Disable both edit and submit buttons
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.5';
+        submitBtn.style.cursor = 'not-allowed';
+        
+        const editBtn = this.shadowRoot.querySelector('#edit-workflow');
+        if (editBtn) {
+          editBtn.disabled = true;
+          editBtn.style.opacity = '0.5';
+          editBtn.style.cursor = 'not-allowed';
+        }
+        
+        // Also disable individual stage edit buttons
+        this.shadowRoot.querySelectorAll('.edit-button').forEach(btn => {
+          btn.disabled = true;
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'not-allowed';
+        });
+
         this.dispatchEvent(new CustomEvent('submit-workflow', {
           detail: { data: { productionStages: this.stages } },
           bubbles: true,
