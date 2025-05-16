@@ -454,13 +454,13 @@ export default function ChatInterface() {
   };
 
   const chatInterfaceStyle = {
-    width: isEnlarged ? '100vw' : '400px',
-    height: isEnlarged ? '100vh' : '600px',
-    position: isEnlarged ? 'fixed' : 'fixed',
-    top: isEnlarged ? '0' : 'auto',
-    left: isEnlarged ? '0' : 'auto',
-    bottom: isEnlarged ? '0' : '20px',
-    right: isEnlarged ? '0' : '20px',
+    width: isEnlarged ? '80%' : '400px',
+    height: isEnlarged ? '80vh' : '600px',
+    position: 'fixed',
+    top: isEnlarged ? '10vh' : 'auto',
+    left: isEnlarged ? '10%' : 'auto',
+    bottom: isEnlarged ? 'auto' : '20px',
+    right: isEnlarged ? 'auto' : '20px',
     backgroundColor: '#fff',
     borderRadius: isEnlarged ? '0' : '8px',
     boxShadow: '0 2px 10px rgba(136,191,232,0.10)',
@@ -468,6 +468,46 @@ export default function ChatInterface() {
     flexDirection: 'column',
     transition: 'all 0.3s ease',
     zIndex: 1000,
+  };
+
+  const messageContainerStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  };
+
+  const messageStyle = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px',
+    maxWidth: '80%',
+  };
+
+  const avatarStyle = {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  };
+
+  const bubbleStyle = type => ({
+    padding: '12px 16px',
+    borderRadius: '12px',
+    backgroundColor: type === 'user' ? '#340368' : '#88bfe8',
+    color: '#ffffff',
+    maxWidth: '100%',
+    wordWrap: 'break-word',
+  });
+
+  const componentContainerStyle = {
+    marginTop: '8px',
+    padding: '12px',
+    backgroundColor: '#ffffff',
+    border: '1px solid #88bfe8',
+    borderRadius: '8px',
   };
 
   const chatBodyStyle = {
@@ -586,18 +626,38 @@ export default function ChatInterface() {
               <LoginForm onLogin={handleLogin} />
             ) : (
               <>
-                {messages.map((message, index) => (
-                  <div key={index} className={`chat-message ${message.type === 'user' ? 'user' : 'bot'}`}>
-                    <div className="bubble" style={{ backgroundColor: '#fff', color: '#340368', border: '1px solid #88bfe8' }}>
-                      {message.content}
-                    </div>
-                    {message.component && (
-                      <div className="mt-2">
-                        {renderComponent(message.component, message.props)}
+                <div style={messageContainerStyle}>
+                  {messages.map((message, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        ...messageStyle,
+                        alignSelf: message.type === 'user' ? 'flex-end' : 'flex-start',
+                      }}
+                    >
+                      {message.type === 'bot' && (
+                        <div style={{ ...avatarStyle, backgroundColor: '#88bfe8' }}>
+                          <MessageSquare size={20} color="#ffffff" />
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={bubbleStyle(message.type)}>
+                          {message.content}
+                        </div>
+                        {message.component && (
+                          <div style={componentContainerStyle}>
+                            {renderComponent(message.component, message.props)}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
+                      {message.type === 'user' && (
+                        <div style={{ ...avatarStyle, backgroundColor: '#340368' }}>
+                          <User size={20} color="#ffffff" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
                 {stagesCount > 0 &&
                   messages.some(m => m.component === 'multi-production-stages') &&
                   stagesData.length === stagesCount &&
