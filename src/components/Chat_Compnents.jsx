@@ -167,13 +167,26 @@ export default function ChatInterface() {
 
   useEffect(() => {
     const handleSummaryEdit = () => {
+      console.log('Edit workflow triggered with stagesData:', stagesData, 'stagesCount:', stagesCount);
       handleEditWorkflow();
     };
 
     const handleSummarySubmit = (e) => {
       let data = undefined;
       if (e && e.detail && e.detail.data) {
-        data = e.detail.data;
+        try {
+          data = JSON.parse(e.detail.data);
+          if (data.productionStages) {
+            setStagesCount(data.productionStages.length);
+            setStagesData(data.productionStages.map(stage => ({
+              rawGoods: stage.rawGoods,
+              outputGoods: stage.outputGoods,
+              middleFields: stage.middleFields
+            })));
+          }
+        } catch (error) {
+          console.error('Error parsing summary data:', error);
+        }
       }
       handleFinalSubmit(data);
     };
@@ -185,7 +198,7 @@ export default function ChatInterface() {
       document.removeEventListener('edit-workflow', handleSummaryEdit);
       document.removeEventListener('submit-workflow', handleSummarySubmit);
     };
-  }, []);
+  }, [stagesData, stagesCount]);
 
   useEffect(() => {
     const handleEditStage = (e) => {
@@ -292,20 +305,27 @@ export default function ChatInterface() {
   };
 
   const handleEditWorkflow = () => {
-    setMessages(prev => {
-      const selectorIndex = prev.findIndex(m => m.component === 'stage-selector');
-      const newMessages = [...prev.slice(0, selectorIndex + 2)];
-      newMessages.push({
-        type: 'bot',
-        content: `Edit Production Workflow (${stagesCount} stages):`,
-        component: 'multi-production-stages',
-        props: { 
-          stagesCount,
-          'initial-data': JSON.stringify(stagesData)  
-        }
+    console.log('handleEditWorkflow called with', { stagesCount, stagesData });
+    if (stagesData.length > 0) {
+      setMessages(prev => {
+        // Filter out previous edit/summary messages
+        const baseMessages = prev.filter(m => !['multi-production-stages', 'production-summary'].includes(m.component));
+        return [
+          ...baseMessages,
+          {
+            type: 'bot',
+            content: `Edit Production Workflow (${stagesData.length} stages):`,
+            component: 'multi-production-stages',
+            props: { 
+              stagesCount: stagesData.length,
+              'initial-data': JSON.stringify(stagesData)
+            }
+          }
+        ];
       });
-      return newMessages;
-    });
+    } else {
+      console.warn('No stages data available for editing');
+    }
   };
 
   const handleFinalSubmit = (dataFromSummary) => {
