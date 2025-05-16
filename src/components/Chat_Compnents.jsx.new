@@ -1,0 +1,28 @@
+import { useState, useEffect, useRef } from 'react';
+import { MessageSquare, X, Send, User } from 'lucide-react';
+import './Confirmation_Modal.jsx';
+import './Goods_Input_Row.jsx';
+import './Wastage_Fields.jsx';
+import './Production_Stage.jsx';
+import './Stage_Flow.jsx';
+import './Stage_Selector.jsx';
+import './Production_Summary.jsx';
+
+export default function ChatInterface() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { type: 'bot', content: 'Please select the number of production stages:', component: 'stage-selector' }
+  ]);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userDetails, setUserDetails] = useState(null);
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [stagesCount, setStagesCount] = useState(0);
+  const [currentStage, setCurrentStage] = useState(0);
+  const [stagesData, setStagesData] = useState([]);
+  const [isEnlarged, setIsEnlarged] = useState(false);
+  const [isSelectingStages, setIsSelectingStages] = useState(true);
+  const messagesEndRef = useRef(null);
+  
+  // Rest of the component code...
+}

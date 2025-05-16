@@ -21,7 +21,7 @@ export default function ChatInterface() {
   const [currentStage, setCurrentStage] = useState(0);
   const [stagesData, setStagesData] = useState([]);
   const [isEnlarged, setIsEnlarged] = useState(false);
-  const [isSelectingStages, setIsSelectingStages] = useState(true); // Track stage selection phase
+  const [isSelectingStages, setIsSelectingStages] = useState(true);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function ChatInterface() {
           { type: 'user', content: `${numValue}` },
           { 
             type: 'bot', 
-            content: `Please fill in the details for all ${numValue} production stages. You can save each stage independently, and submit the workflow once all stages are complete.`, 
+            content: `Please fill in the details for all ${numValue} production stages:`, 
             component: 'multi-production-stages', 
             props: { stagesCount: numValue } 
           }
@@ -120,7 +120,7 @@ export default function ChatInterface() {
           props: { stagesCount: stages } 
         }
       ]);
-      setIsSelectingStages(false); // Move to next phase after button click
+      setIsSelectingStages(false);
     };
     document.addEventListener('select', handleSelectStages);
     return () => document.removeEventListener('select', handleSelectStages);
@@ -129,12 +129,13 @@ export default function ChatInterface() {
   useEffect(() => {
     const handleStageComplete = (e) => {
       const stageData = e.detail;
-      const updatedStagesData = [...stagesData];
       const completedStage = parseInt(e.target.getAttribute('stage-index'));
+      const updatedStagesData = [...stagesData];
       updatedStagesData[completedStage] = stageData;
+      console.log('Stage data received in handleStageComplete:', { completedStage, stageData });
+      console.log('Updated stagesData before set:', updatedStagesData);
       setStagesData(updatedStagesData);
 
-      // Update stage data without showing individual success messages
       const allFieldsFilled = updatedStagesData.length === stagesCount && 
         updatedStagesData.every(stage => stage && 
           stage.rawGoods.length > 0 && 
@@ -144,8 +145,13 @@ export default function ChatInterface() {
           stage.rawGoods.every(g => g.name && g.qty && g.dimension) &&
           stage.outputGoods.every(g => g.name && g.qty && g.dimension));
 
+      console.log('allFieldsFilled check:', {
+        stagesCount,
+        updatedStagesDataLength: updatedStagesData.length,
+        allFieldsFilled
+      });
+
       if (allFieldsFilled) {
-        // All fields are filled, show the submit button
         const submitMessage = messages.find(m => m.content === 'You can now submit the complete workflow.');
         if (!submitMessage) {
           setMessages((prev) => [
@@ -157,30 +163,52 @@ export default function ChatInterface() {
     };
     document.addEventListener('complete', handleStageComplete);
     return () => document.removeEventListener('complete', handleStageComplete);
-  }, [stagesCount, stagesData]);
+  }, [stagesCount, stagesData, messages]);
 
   useEffect(() => {
-    const handleWorkflowSubmit = () => {
-      setMessages((prev) => [
-        ...prev,
-        { type: 'user', content: 'Workflow submitted.' },
-        { type: 'bot', content: 'Here is your final production workflow summary:', component: 'production-summary', props: { stages: JSON.stringify(stagesData) } }
-      ]);
+    const handleSummaryEdit = () => {
+      handleEditWorkflow();
     };
 
-    document.addEventListener('workflow-final-submitted', handleWorkflowSubmit);
-    return () => document.removeEventListener('workflow-final-submitted', handleWorkflowSubmit);
-  }, [stagesData]);
+    const handleSummarySubmit = (e) => {
+      let data = undefined;
+      if (e && e.detail && e.detail.data) {
+        data = e.detail.data;
+      }
+      handleFinalSubmit(data);
+    };
+
+    document.addEventListener('edit-workflow', handleSummaryEdit);
+    document.addEventListener('submit-workflow', handleSummarySubmit);
+    
+    return () => {
+      document.removeEventListener('edit-workflow', handleSummaryEdit);
+      document.removeEventListener('submit-workflow', handleSummarySubmit);
+    };
+  }, []);
 
   useEffect(() => {
     const handleEditStage = (e) => {
       const { index } = e.detail;
       setCurrentStage(index);
-      setMessages((prev) => [
-        ...prev,
-        { type: 'user', content: `Editing Stage ${index + 1}.` },
-        { type: 'bot', content: `Edit details for Stage ${index + 1}:`, component: 'production-stage', props: { 'stage-index': index, 'initial-data': JSON.stringify(stagesData[index]), 'is-last': index === stagesCount - 1 } }
-      ]);
+      setMessages((prev) => {
+        const selectorIndex = prev.findIndex(m => m.component === 'stage-selector');
+        return [
+          ...prev.slice(0, selectorIndex + 2),
+          { type: 'user', content: `Editing Stage ${index + 1}.` },
+          { 
+            type: 'bot', 
+            content: `Edit details for Stage ${index + 1}:`, 
+            component: 'production-stage', 
+            props: { 
+              'stage-index': index, 
+              'stage-count': stagesCount,
+              'initial-data': JSON.stringify(stagesData[index] || {}), 
+              'is-last': index === stagesCount - 1 
+            } 
+          }
+        ];
+      });
     };
     document.addEventListener('edit', handleEditStage);
     return () => document.removeEventListener('edit', handleEditStage);
@@ -196,6 +224,7 @@ export default function ChatInterface() {
       ]);
       setIsSelectingStages(true);
     };
+
     document.addEventListener('reset', handleReset);
     return () => document.removeEventListener('reset', handleReset);
   }, []);
@@ -204,7 +233,120 @@ export default function ChatInterface() {
     setIsEnlarged(!isEnlarged);
   };
 
-  // Render all stages at once for multi-stage entry
+  const handleWorkflowSubmit = () => {
+    console.log('handleWorkflowSubmit called with stagesData:', stagesData);
+    
+    if (stagesData.length === stagesCount && 
+        stagesData.every(stage => stage && 
+          stage.rawGoods.length > 0 && 
+          stage.outputGoods.length > 0 && 
+          stage.middleFields.time && 
+          stage.middleFields.outsource &&
+          stage.rawGoods.every(g => g.name && g.qty && g.dimension) &&
+          stage.outputGoods.every(g => g.name && g.qty && g.dimension))) {
+      
+      const formattedData = {
+        productionStages: stagesData.map((stage, idx) => ({
+          stageNumber: idx + 1,
+          rawGoods: stage.rawGoods,
+          middleFields: stage.middleFields,
+          outputGoods: stage.outputGoods
+        }))
+      };
+      
+      // Convert to string with JSON.stringify to ensure proper serialization
+      const stringifiedData = JSON.stringify(formattedData);
+      console.log('Stringified data:', stringifiedData);
+      
+      setMessages(prev => {
+        // Remove any existing production-summary components
+        const filteredMessages = prev.filter(m => m.component !== 'production-summary');
+        return [
+          ...filteredMessages,
+          { type: 'user', content: 'Workflow submitted successfully.' },
+          { 
+            type: 'bot', 
+            content: 'Production Workflow Summary:', 
+            component: 'production-summary', 
+            props: { 
+              data: stringifiedData,
+              stages: stringifiedData, // Pass the same data to both props
+              showedit: true,
+              showsubmit: true
+            } 
+          }
+        ];
+      });
+
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      setMessages(prev => [
+        ...prev,
+        { type: 'bot', content: 'Please fill in all required fields in all stages before submitting.' }
+      ]);
+    }
+  };
+
+  const handleEditWorkflow = () => {
+    setMessages(prev => {
+      const selectorIndex = prev.findIndex(m => m.component === 'stage-selector');
+      const newMessages = [...prev.slice(0, selectorIndex + 2)];
+      newMessages.push({
+        type: 'bot',
+        content: `Edit Production Workflow (${stagesCount} stages):`,
+        component: 'multi-production-stages',
+        props: { 
+          stagesCount,
+          'initial-data': JSON.stringify(stagesData)  
+        }
+      });
+      return newMessages;
+    });
+  };
+
+  const handleFinalSubmit = (dataFromSummary) => {
+    let formattedData;
+    if (dataFromSummary) {
+      formattedData = dataFromSummary;
+    } else {
+      formattedData = {
+        productionStages: stagesData.map((stage, idx) => ({
+          stageNumber: idx + 1,
+          rawGoods: stage.rawGoods.map(good => ({
+            name: good.name || 'Unknown Good',
+            qty: good.qty || '0',
+            dimension: good.dimension || 'N/A'
+          })),
+          middleFields: {
+            wastageEntries: stage.middleFields.wastageEntries
+              .filter(entry => entry.good && entry.wastage)
+              .map(entry => ({
+                good: entry.good || 'Unknown Good',
+                wastage: entry.wastage || '0',
+                type: entry.type || 'percent'
+              })),
+            time: stage.middleFields.time || 'N/A',
+            outsource: stage.middleFields.outsource || 'no'
+          },
+          outputGoods: stage.outputGoods.map(good => ({
+            name: good.name || 'Unknown Good',
+            qty: good.qty || '0',
+            dimension: good.dimension || 'N/A'
+          }))
+        }))
+      };
+    }
+    console.log('Submitting workflow to backend:', formattedData);
+    setMessages(prev => [
+      ...prev,
+      { type: 'bot', content: 'Workflow has been successfully submitted to the backend.' }
+    ]);
+  };
+
   const renderComponent = (component, props) => {
     switch (component) {
       case 'stage-selector':
@@ -248,7 +390,7 @@ export default function ChatInterface() {
                 <production-stage
                   stage-index={idx}
                   stage-count={props.stagesCount}
-                  initial-data={JSON.stringify(stagesData[idx] || {})}
+                  initial-data={JSON.stringify((props['initial-data'] ? JSON.parse(props['initial-data'])[idx] : {}) || {})}
                 ></production-stage>
               </div>
             ))}
@@ -262,9 +404,9 @@ export default function ChatInterface() {
   };
 
   const chatHeaderStyle = {
-    backgroundColor: '#ffffff', // White background
-    color: '#340368', // Dark purple text
-    borderBottom: '1px solid #88bfe8', // Light blue border
+    backgroundColor: '#ffffff',
+    color: '#340368',
+    borderBottom: '1px solid #88bfe8',
     padding: '10px 20px',
     display: 'flex',
     justifyContent: 'space-between',
@@ -274,9 +416,9 @@ export default function ChatInterface() {
   };
 
   const chatBubbleStyle = {
-    backgroundColor: '#ffffff', // White background
-    color: '#340368', // Dark purple text
-    border: '1px solid #88bfe8', // Light blue border
+    backgroundColor: '#ffffff',
+    color: '#340368',
+    border: '1px solid #88bfe8',
     borderRadius: '50%',
     width: '50px',
     height: '50px',
@@ -294,7 +436,7 @@ export default function ChatInterface() {
   const chatInterfaceStyle = {
     width: isEnlarged ? '100vw' : '400px',
     height: isEnlarged ? '100vh' : '600px',
-    position: isEnlarged ? 'fixed' : 'absolute',
+    position: isEnlarged ? 'fixed' : 'fixed',
     top: isEnlarged ? '0' : 'auto',
     left: isEnlarged ? '0' : 'auto',
     bottom: isEnlarged ? '0' : '20px',
@@ -331,7 +473,6 @@ export default function ChatInterface() {
     marginRight: '10px',
     background: '#fff',
     color: '#340368',
-    // Restrict to numbers during stage selection
     ...(isSelectingStages && { pattern: '[0-9]*', inputMode: 'numeric' }),
   };
 
@@ -377,47 +518,6 @@ export default function ChatInterface() {
     marginTop: '20px',
     width: '100%',
     transition: 'background-color 0.3s',
-  };
-
-  const handleWorkflowSubmit = () => {
-    // Validate all stages before submission
-    if (stagesData.length === stagesCount && 
-        stagesData.every(stage => stage && 
-          stage.rawGoods.length > 0 && 
-          stage.outputGoods.length > 0 && 
-          stage.middleFields.time && 
-          stage.middleFields.outsource &&
-          stage.rawGoods.every(g => g.name && g.qty && g.dimension) &&
-          stage.outputGoods.every(g => g.name && g.qty && g.dimension))) {
-      
-      // First remove any existing summary
-      setMessages(prev => prev.filter(m => m.component !== 'production-summary'));
-      
-      // Then add the new summary
-      setMessages((prev) => [
-        ...prev,
-        { type: 'user', content: 'Workflow submitted successfully.' },
-        { 
-          type: 'bot', 
-          content: 'Here is your Production Workflow Summary:', 
-          component: 'production-summary', 
-          props: { stages: JSON.stringify(stagesData) } 
-        }
-      ]);
-
-      // Scroll to the summary after a short delay
-      setTimeout(() => {
-        if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
-
-    } else {
-      setMessages((prev) => [
-        ...prev,
-        { type: 'bot', content: 'Please fill in all required fields in all stages before submitting.' }
-      ]);
-    }
   };
 
   return (
@@ -478,7 +578,6 @@ export default function ChatInterface() {
                     )}
                   </div>
                 ))}
-                {/* Show submit button after all stages are filled (all fields non-empty) */}
                 {stagesCount > 0 &&
                   messages.some(m => m.component === 'multi-production-stages') &&
                   stagesData.length === stagesCount &&
@@ -488,7 +587,7 @@ export default function ChatInterface() {
                     Array.isArray(stage.outputGoods) && stage.outputGoods.length > 0 && stage.outputGoods.every(g => g.name && g.qty && g.dimension) &&
                     stage.middleFields && stage.middleFields.time && stage.middleFields.outsource
                   ) &&
-                  !messages.some(m => m.content === 'Workflow submitted.') && (
+                  !messages.some(m => m.component === 'production-summary') && (
                     <div style={{ textAlign: 'center', marginTop: '20px' }}>
                       <button
                         onClick={handleWorkflowSubmit}
