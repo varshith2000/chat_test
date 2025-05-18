@@ -1,3 +1,7 @@
+  // Clears validation error messages when any input changes
+  const clearValidationErrors = () => {
+    setMessages(prev => prev.filter(m => !m.content.includes('Please fill in all required fields')));
+  };
 import { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, User } from 'lucide-react';
 import './Confirmation_Modal.jsx';
@@ -22,6 +26,7 @@ export default function ChatInterface() {
   const [stagesData, setStagesData] = useState([]);
   const [isEnlarged, setIsEnlarged] = useState(false);
   const [isSelectingStages, setIsSelectingStages] = useState(true);
+  const [goodsList, setGoodsList] = useState([]);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -132,35 +137,57 @@ export default function ChatInterface() {
       const completedStage = parseInt(e.target.getAttribute('stage-index'));
       const updatedStagesData = [...stagesData];
       updatedStagesData[completedStage] = stageData;
-      console.log('Stage data received in handleStageComplete:', { completedStage, stageData });
-      console.log('Updated stagesData before set:', updatedStagesData);
       setStagesData(updatedStagesData);
 
+      // Enhanced validation check
       const allFieldsFilled = updatedStagesData.length === stagesCount && 
-        updatedStagesData.every(stage => stage && 
-          stage.rawGoods.length > 0 && 
-          stage.outputGoods.length > 0 && 
-          stage.middleFields.time && 
-          stage.middleFields.outsource &&
-          stage.rawGoods.every(g => g.name && g.qty && g.dimension) &&
-          stage.outputGoods.every(g => g.name && g.qty && g.dimension));
+        updatedStagesData.every(stage => {
+          if (!stage) return false;
+          
+          // Check raw goods
+          const validRawGoods = stage.rawGoods && 
+            stage.rawGoods.length > 0 && 
+            stage.rawGoods.every(g => g.name && g.name.trim() && g.qty && g.dimension);
+          
+          // Check output goods
+          const validOutputGoods = stage.outputGoods && 
+            stage.outputGoods.length > 0 && 
+            stage.outputGoods.every(g => g.name && g.name.trim() && g.qty && g.dimension);
+          
+          // Check middle fields
+          const validMiddleFields = stage.middleFields && 
+            stage.middleFields.time && 
+            stage.middleFields.outsource &&
+            stage.middleFields.wastageEntries &&
+            stage.middleFields.wastageEntries.every(entry => 
+              (!entry.good && !entry.wastage) // Allow empty entries
+              || (entry.good && entry.wastage && entry.type) // Or complete entries
+            );
+          
+          return validRawGoods && validOutputGoods && validMiddleFields;
+        });
 
-      console.log('allFieldsFilled check:', {
-        stagesCount,
-        updatedStagesDataLength: updatedStagesData.length,
-        allFieldsFilled
-      });
-
+      // Update messages based on validation state
       if (allFieldsFilled) {
-        const submitMessage = messages.find(m => m.content === 'You can now submit the complete workflow.');
-        if (!submitMessage) {
-          setMessages((prev) => [
-            ...prev,
-            { type: 'bot', content: 'You can now submit the complete workflow.' }
-          ]);
-        }
+        setMessages(prev => {
+          // Remove any error messages
+          const filteredMessages = prev.filter(m => 
+            !m.content.includes('Please fill in all required fields'));
+          
+          // Add or update completion message
+          const hasSubmitMessage = filteredMessages.some(m => 
+            m.content === 'You can now submit the complete workflow.');
+          
+          if (!hasSubmitMessage) {
+            return [...filteredMessages, 
+              { type: 'bot', content: 'You can now submit the complete workflow.' }
+            ];
+          }
+          return filteredMessages;
+        });
       }
     };
+
     document.addEventListener('complete', handleStageComplete);
     return () => document.removeEventListener('complete', handleStageComplete);
   }, [stagesCount, stagesData, messages]);
@@ -328,7 +355,7 @@ export default function ChatInterface() {
     }
   };
 
-  const handleFinalSubmit = (dataFromSummary) => {
+  const handleFinalSubmit = async (dataFromSummary) => {
     let formattedData;
     if (dataFromSummary) {
       formattedData = dataFromSummary;
@@ -360,11 +387,45 @@ export default function ChatInterface() {
         }))
       };
     }
-    console.log('Submitting workflow to backend:', formattedData);
-    setMessages(prev => [
-      ...prev,
-      { type: 'bot', content: 'Workflow has been successfully submitted to the backend.' }
-    ]);
+    
+    try {
+      const response = await fetch('http://localhost:8000/api/workflow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(formattedData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Backend response:', result);
+      
+      setMessages(prev => [
+        ...prev,
+        { type: 'bot', content: 'Workflow has been successfully submitted to the backend.' }
+      ]);
+    } catch (error) {
+      console.error('Error submitting to backend:', error);
+      setMessages(prev => [
+        ...prev,
+        { type: 'bot', content: `Error submitting workflow to backend: ${error.message}. Please try again.` }
+      ]);
+    }
+  };
+
+  const handleStageDataChange = (stageIndex, newData) => {
+    const updatedStagesData = [...stagesData];
+    updatedStagesData[stageIndex] = newData;
+    setStagesData(updatedStagesData);
+    
+    // Clear any validation error messages
+    setMessages(prev => prev.filter(m => 
+      !m.content.includes('Please fill in all required fields')));
   };
 
   const renderComponent = (component, props) => {
@@ -372,7 +433,7 @@ export default function ChatInterface() {
       case 'stage-selector':
         return <stage-selector {...props} />;
       case 'production-stage':
-        return <production-stage {...props} />;
+        return <production-stage {...props} onInput={clearValidationErrors} />;
       case 'multi-production-stages':
         return (
           <div style={{ 
@@ -410,7 +471,9 @@ export default function ChatInterface() {
                 <production-stage
                   stage-index={idx}
                   stage-count={props.stagesCount}
+                  goods-list={JSON.stringify(goodsList)}
                   initial-data={JSON.stringify((props['initial-data'] ? JSON.parse(props['initial-data'])[idx] : {}) || {})}
+                  onInput={clearValidationErrors}
                 ></production-stage>
               </div>
             ))}
@@ -580,6 +643,16 @@ export default function ChatInterface() {
     transition: 'background-color 0.3s',
   };
 
+  useEffect(() => {
+    const handleGoodsListUpdate = (e) => {
+      const newGoodsList = e.detail.goodsList;
+      setGoodsList(newGoodsList);
+    };
+
+    document.addEventListener('goods-list-update', handleGoodsListUpdate);
+    return () => document.removeEventListener('goods-list-update', handleGoodsListUpdate);
+  }, []);
+
   return (
     <div className="chat-container">
       <button
@@ -667,7 +740,10 @@ export default function ChatInterface() {
                     Array.isArray(stage.outputGoods) && stage.outputGoods.length > 0 && stage.outputGoods.every(g => g.name && g.qty && g.dimension) &&
                     stage.middleFields && stage.middleFields.time && stage.middleFields.outsource
                   ) &&
-                  !messages.some(m => m.component === 'production-summary') && (
+                  !messages.some(m => 
+                    m.content.includes('Please fill in all required fields') || 
+                    m.component === 'production-summary'
+                  ) && (
                     <div style={{ textAlign: 'center', marginTop: '20px' }}>
                       <button
                         onClick={handleWorkflowSubmit}

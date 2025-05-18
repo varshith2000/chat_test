@@ -1,12 +1,11 @@
-class ProductionStage extends HTMLElement {
-  constructor() {
+class ProductionStage extends HTMLElement {    constructor() {
     super();
     this.attachShadow({ mode: 'open' });
     this.stageIndex = parseInt(this.getAttribute('stage-index') || '0');
     this.stageCount = parseInt(this.getAttribute('stage-count') || '1');
     this.initialData = JSON.parse(this.getAttribute('initial-data') || '{}');
     console.log('ProductionStage initialized with initial-data:', this.initialData);
-    this.goodsList = ['Flour', 'Sugar', 'Oil'];
+    this.goodsList = [];
     this.rawGoods = this.initialData.rawGoods || [{ name: '', qty: '', dimension: '' }];
     this.outputGoods = this.initialData.outputGoods || [{ name: '', qty: '', dimension: '' }];
     this.middleFields = this.initialData.middleFields || {
@@ -21,7 +20,7 @@ class ProductionStage extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['stage-index', 'initial-data', 'stage-count'];
+    return ['stage-index', 'initial-data', 'stage-count', 'goods-list'];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -29,6 +28,13 @@ class ProductionStage extends HTMLElement {
       this.stageIndex = parseInt(newValue || '0');
     } else if (name === 'stage-count') {
       this.stageCount = parseInt(newValue || '1');
+    } else if (name === 'goods-list') {
+      try {
+        this.goodsList = JSON.parse(newValue || '[]');
+        this.render();
+      } catch (error) {
+        console.error('Error parsing goods-list:', error);
+      }
     } else if (name === 'initial-data') {
       try {
         this.initialData = JSON.parse(newValue || '{}');
@@ -84,6 +90,18 @@ class ProductionStage extends HTMLElement {
     }
     this.validationErrors = errors;
     return Object.keys(errors).length === 0;
+  }
+
+  updateGoodsList(newGood) {
+    if (!this.goodsList.includes(newGood)) {
+      this.goodsList = [...this.goodsList, newGood];
+      // Dispatch event to update all stages with new goods list
+      this.dispatchEvent(new CustomEvent('goods-list-update', {
+        detail: { goodsList: this.goodsList },
+        bubbles: true,
+        composed: true
+      }));
+    }
   }
 
   render() {
@@ -250,6 +268,12 @@ class ProductionStage extends HTMLElement {
     `;
 
     this.shadowRoot.querySelectorAll('goods-input-row').forEach(row => {
+      // Clear validation errors on any input
+      row.addEventListener('input', () => {
+        this.showErrors = false;
+        this.validationErrors = {};
+        this.render();
+      });
       row.addEventListener('change', (e) => {
         const idx = parseInt(row.dataset.idx);
         const type = row.dataset.type;
@@ -291,7 +315,7 @@ class ProductionStage extends HTMLElement {
     this.shadowRoot.querySelector('confirmation-modal').addEventListener('confirm', (e) => {
       const { type, idx } = this.modal;
       const newName = e.detail.value;
-      this.goodsList = [...this.goodsList, newName];
+      this.updateGoodsList(newName);
       if (type === 'raw') {
         this.rawGoods[idx] = { ...this.rawGoods[idx], name: newName };
       } else {

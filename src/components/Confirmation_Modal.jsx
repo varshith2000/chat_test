@@ -16,11 +16,27 @@ class ConfirmationModal extends HTMLElement {
     if (name === 'open') {
       this.open = newValue === 'true';
       this.inputValue = this.goodName;
+      this.render();
     } else if (name === 'good-name') {
       this.goodName = newValue || '';
       this.inputValue = this.goodName;
+      this.updateInputValue();
     }
-    this.render();
+  }
+
+  updateInputValue() {
+    const input = this.shadowRoot.querySelector('input');
+    if (input) {
+      input.value = this.inputValue;
+    }
+    this.updateConfirmButton();
+  }
+
+  updateConfirmButton() {
+    const confirmButton = this.shadowRoot.querySelector('#confirm');
+    if (confirmButton) {
+      confirmButton.disabled = !this.inputValue.trim();
+    }
   }
 
   render() {
@@ -28,6 +44,7 @@ class ConfirmationModal extends HTMLElement {
       this.shadowRoot.innerHTML = '';
       return;
     }
+
     this.shadowRoot.innerHTML = `
       <style>
         .modal-overlay {
@@ -85,6 +102,10 @@ class ConfirmationModal extends HTMLElement {
           margin-bottom: 8px;
           margin-right: 4px;
         }
+        input:focus {
+          border-color: #340368;
+          outline: none;
+        }
       </style>
       <div class="modal-overlay">
         <div class="modal-box">
@@ -111,7 +132,7 @@ class ConfirmationModal extends HTMLElement {
     const input = this.shadowRoot.querySelector('input');
     input.addEventListener('input', (e) => {
       this.inputValue = e.target.value;
-      this.render();
+      this.updateConfirmButton(); // Update the button state without re-rendering the entire modal
     });
 
     this.shadowRoot.querySelector('#confirm').addEventListener('click', () => {

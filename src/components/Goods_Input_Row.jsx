@@ -80,7 +80,7 @@ class GoodsInputRow extends HTMLElement {
             </select>
           </div>
           <div class="input-container">
-            <input type="number" class="input" min="0" value="${this.value.qty || ''}" placeholder="Qty" />
+            <input type="text" inputmode="numeric" pattern="[0-9]*" class="input" min="0" value="${this.value.qty || ''}" placeholder="Qty" />
           </div>
           ${this.showDimension ? `
             <div class="dimension-container">
@@ -89,6 +89,8 @@ class GoodsInputRow extends HTMLElement {
                 <option value="kg">kg</option>
                 <option value="g">g</option>
                 <option value="l">L</option>
+                <option value="pcs">pcs</option>
+                <option value="units">units</option>
               </select>
             </div>
           ` : ''}
@@ -100,6 +102,30 @@ class GoodsInputRow extends HTMLElement {
 
     const select = this.shadowRoot.querySelector('.select');
     select.value = this.value.name || '';
+    select.addEventListener('input', (e) => {
+      const selected = e.target.value;
+      if (selected === '__add_new__') {
+        this.dispatchEvent(new CustomEvent('add-new', {
+          bubbles: true,
+          composed: true
+        }));
+      } else {
+        this.value.name = selected;
+        // Dispatch both 'input' and 'change' for React compatibility and validation clearing
+        this.dispatchEvent(new CustomEvent('input', {
+          detail: { value: this.value },
+          bubbles: true,
+          composed: true
+        }));
+        this.dispatchEvent(new CustomEvent('change', {
+          detail: { value: this.value },
+          bubbles: true,
+          composed: true
+        }));
+      }
+    });
+
+    // Also support 'change' event for select for compatibility
     select.addEventListener('change', (e) => {
       const selected = e.target.value;
       if (selected === '__add_new__') {
@@ -109,6 +135,11 @@ class GoodsInputRow extends HTMLElement {
         }));
       } else {
         this.value.name = selected;
+        this.dispatchEvent(new CustomEvent('input', {
+          detail: { value: this.value },
+          bubbles: true,
+          composed: true
+        }));
         this.dispatchEvent(new CustomEvent('change', {
           detail: { value: this.value },
           bubbles: true,
@@ -118,14 +149,39 @@ class GoodsInputRow extends HTMLElement {
     });
 
     const qtyInput = this.shadowRoot.querySelector('.input');
+    qtyInput.value = this.value.qty || '';
+    // Handle input changes for quantity
     qtyInput.addEventListener('input', (e) => {
-      this.value.qty = e.target.value;
+      const newValue = e.target.value.replace(/[^0-9]/g, '');
+      this.value.qty = newValue;
+      e.target.value = newValue;
+      // Dispatch both 'input' and 'change' events for React compatibility and validation clearing
+      this.dispatchEvent(new CustomEvent('input', {
+        detail: { value: this.value },
+        bubbles: true,
+        composed: true
+      }));
       this.dispatchEvent(new CustomEvent('change', {
         detail: { value: this.value },
         bubbles: true,
         composed: true
       }));
     });
+
+    // Maintain focus on the input field
+    qtyInput.addEventListener('focus', function() {
+      const val = this.value;
+      this.value = '';
+      this.value = val;
+    });
+
+    // Add support for text input for name field (if you want to allow typing a new name)
+    // If you have a text input for name, use the same pattern:
+    // nameInput.addEventListener('input', (e) => {
+    //   this.value.name = e.target.value;
+    //   this.dispatchEvent(new CustomEvent('input', { detail: { value: this.value }, bubbles: true, composed: true }));
+    //   this.dispatchEvent(new CustomEvent('change', { detail: { value: this.value }, bubbles: true, composed: true }));
+    // });
 
     if (this.showDimension) {
       const dimensionSelect = this.shadowRoot.querySelector('.dimension-select');
