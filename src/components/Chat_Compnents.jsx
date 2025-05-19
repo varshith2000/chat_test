@@ -1,7 +1,3 @@
-// Clears validation error messages when any input changes
-  const clearValidationErrors = () => {
-    setMessages(prev => prev.filter(m => !m.content.includes('Please fill in all required fields')));
-  };
 import { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, User } from 'lucide-react';
 import './Confirmation_Modal.jsx';
@@ -60,10 +56,6 @@ export default function ChatInterface() {
     setIsSelectingStages(true);
   };
 
-  const clearValidationErrors = () => {
-    setMessages(prev => prev.filter(m => !m.content.includes('Please fill in all required fields')));
-  };
-
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (isSelectingStages) {
@@ -80,15 +72,14 @@ export default function ChatInterface() {
           }
         };
         setStagesData(Array(numValue).fill(null).map(() => ({ ...initialStageData })));
-        setCurrentStage(0);
         setMessages((prev) => [
           ...prev,
           { type: 'user', content: `${numValue}` },
           { 
             type: 'bot', 
-            content: `Please fill in the details for Stage 1:`, 
+            content: `Please fill in the details for all ${numValue} production stages:`, 
             component: 'multi-production-stages', 
-            props: { stagesCount: numValue, stageIndex: 0 } 
+            props: { stagesCount: numValue } 
           }
         ]);
         setIsSelectingStages(false);
@@ -124,27 +115,15 @@ export default function ChatInterface() {
           outsource: 'no'
         }
       };
-
-      const createEmptyStage = () => JSON.parse(JSON.stringify({
-        rawGoods: [{ name: '', qty: '', dimension: '' }],
-        outputGoods: [{ name: '', qty: '', dimension: '' }],
-        middleFields: {
-          wastageEntries: [{ good: '', wastage: '', type: 'percent' }],
-          time: '',
-          outsource: 'no'
-        }
-      }));
-
-      setStagesData(Array.from({ length: numValue }, () => createEmptyStage()));
-      setCurrentStage(0);
+      setStagesData(Array(stages).fill(null).map(() => ({ ...initialStageData })));
       setMessages((prev) => [
         ...prev,
         { type: 'user', content: `Number of stages: ${stages}` },
         { 
           type: 'bot', 
-          content: `Please fill in the details for Stage 1:`, 
+          content: `Please fill in the details for all ${stages} production stages:`, 
           component: 'multi-production-stages', 
-          props: { stagesCount: stages, stageIndex: 0 } 
+          props: { stagesCount: stages } 
         }
       ]);
       setIsSelectingStages(false);
@@ -154,79 +133,73 @@ export default function ChatInterface() {
   }, []);
 
   useEffect(() => {
-  const handlePrevStage = (e) => {
-    const { stageIndex, stageData } = e.detail;
-    const updatedStagesData = [...stagesData];
-    updatedStagesData[stageIndex] = stageData;
-    setStagesData(updatedStagesData);
-    if (stageIndex > 0) {
-      setCurrentStage(stageIndex - 1);
-      setMessages(prev => {
-        const filteredMessages = prev.filter(m => m.component !== 'production-stage');
-        return [
-          ...filteredMessages,
-          {
-            type: 'bot',
-            content: `Please fill in the details for Stage ${stageIndex}`,
-            component: 'production-stage',
-            props: {
-              'stage-index': stageIndex - 1,
-              'stage-count': stagesCount,
-              'initial-data': JSON.stringify(updatedStagesData[stageIndex - 1] || {
-                rawGoods: [{ name: '', qty: '', dimension: '' }],
-                outputGoods: [{ name: '', qty: '', dimension: '' }],
-                middleFields: {
-                  wastageEntries: [{ good: '', wastage: '', type: 'percent' }],
-                  time: '',
-                  outsource: 'no'
-                }
-              }),
-              'goods-list': JSON.stringify(goodsList)
-            }
-          }
-        ];
-      });
-    }
-  };
-  document.addEventListener('prev-stage', handlePrevStage);
-  return () => document.removeEventListener('prev-stage', handlePrevStage);
-}, [stagesData, stagesCount, goodsList]);
-
-  useEffect(() => {
     const handleStageComplete = (e) => {
       const stageData = e.detail;
       const completedStage = currentStage;
       const updatedStagesData = [...stagesData];
-      updatedStagesData[completedStage] = stageData;
+      
+      // Create fresh copy of current stage's data
+      updatedStagesData[completedStage] = {
+        rawGoods: stageData.rawGoods.map(good => ({...good})),
+        outputGoods: stageData.outputGoods.map(good => ({...good})),
+        middleFields: {
+          ...stageData.middleFields,
+          wastageEntries: stageData.middleFields.wastageEntries.map(entry => ({...entry}))
+        }
+      };
+
+      // Update stagesData state immediately
       setStagesData(updatedStagesData);
 
       if (completedStage < stagesCount - 1) {
+        // Prepare empty data for the next stage if it doesn't exist
+        const nextStageIndex = completedStage + 1;
+        if (!updatedStagesData[nextStageIndex]) {
+             updatedStagesData[nextStageIndex] = {
+              rawGoods: [{ name: '', qty: '', dimension: '' }],
+              outputGoods: [{ name: '', qty: '', dimension: '' }],
+              middleFields: {
+                wastageEntries: [{ good: '', wastage: '', type: 'percent' }],
+                time: '',
+                outsource: 'no'
+              }
+            };
+            // Update stagesData state again with the new empty stage data
+            setStagesData(updatedStagesData);
+        }
+        
         // Move to the next stage
-        setCurrentStage(completedStage + 1);
+        setCurrentStage(nextStageIndex);
+        
+        // Update messages to show the next stage component
         setMessages(prev => {
+          // Filter out the previous production-stage message
           const filteredMessages = prev.filter(m => m.component !== 'production-stage');
           return [
             ...filteredMessages,
             {
               type: 'bot',
-              content: `Please fill in the details for Stage ${completedStage + 2}:`,
-              component: 'production-stage',
+              content: `Please fill in the details for Stage ${nextStageIndex + 1}:`,
+              component: 'multi-production-stages', // Keep using multi-production-stages
               props: {
-                'stage-index': completedStage + 1,
+                'stage-index': nextStageIndex,
                 'stage-count': stagesCount,
-                'initial-data': JSON.stringify(updatedStagesData[completedStage + 1] || {}),
+                // Pass the data for the next stage
+                'initial-data': JSON.stringify(updatedStagesData[nextStageIndex]),
                 'goods-list': JSON.stringify(goodsList)
               }
             }
           ];
         });
       } else {
+        // Show summary after the last stage
         const formattedData = updatedStagesData.map((stage, idx) => ({
           stageNumber: idx + 1,
           ...stage
         }));
 
         setMessages(prev => {
+          // Filter out the last production-stage message before showing summary
           const filteredMessages = prev.filter(m => m.component !== 'production-stage');
           return [
             ...filteredMessages,
@@ -237,7 +210,7 @@ export default function ChatInterface() {
               component: 'production-summary',
               props: {
                 data: JSON.stringify({ productionStages: formattedData }),
-                stages: JSON.stringify(formattedData),
+                stages: formattedData,
                 showedit: true,
                 showsubmit: true
               }
@@ -249,7 +222,55 @@ export default function ChatInterface() {
 
     document.addEventListener('complete', handleStageComplete);
     return () => document.removeEventListener('complete', handleStageComplete);
-  }, [stagesCount, stagesData, goodsList]);
+  }, [stagesCount, stagesData, goodsList, currentStage]); // Added stagesData to dependencies
+
+  useEffect(() => {
+    const handlePrevStage = (e) => {
+      const { stageIndex, stageData } = e.detail;
+      const updatedStagesData = [...stagesData];
+      
+      // Ensure we're only updating the current stage's data
+      updatedStagesData[stageIndex] = {
+        rawGoods: stageData.rawGoods.map(good => ({...good})),
+        outputGoods: stageData.outputGoods.map(good => ({...good})),
+        middleFields: {
+          ...stageData.middleFields,
+          wastageEntries: stageData.middleFields.wastageEntries.map(entry => ({...entry}))
+        }
+      };
+      
+      // Update stagesData state immediately
+      setStagesData(updatedStagesData);
+      
+      if (stageIndex > 0) {
+        const prevStageIndex = stageIndex - 1;
+        setCurrentStage(prevStageIndex);
+        
+        setMessages(prev => {
+          // Filter out the previous production-stage message
+          const filteredMessages = prev.filter(m => m.component !== 'production-stage');
+          return [
+            ...filteredMessages,
+            {
+              type: 'bot',
+              content: `Please fill in the details for Stage ${prevStageIndex + 1}`,
+              component: 'multi-production-stages', // Keep using multi-production-stages
+              props: {
+                'stage-index': prevStageIndex,
+                'stage-count': stagesCount,
+                // Pass the data for the previous stage
+                'initial-data': JSON.stringify(updatedStagesData[prevStageIndex]),
+                'goods-list': JSON.stringify(goodsList)
+              }
+            }
+          ];
+        });
+      }
+    };
+    
+    document.addEventListener('prev-stage', handlePrevStage);
+    return () => document.removeEventListener('prev-stage', handlePrevStage);
+  }, [stagesData, stagesCount, goodsList, currentStage]); // Added stagesData to dependencies
 
   useEffect(() => {
     const handleSummaryEdit = () => {
@@ -261,6 +282,7 @@ export default function ChatInterface() {
       let data = undefined;
       if (e && e.detail && e.detail.data) {
         try {
+          // Ensure the data is properly serialized as JSON
           data = typeof e.detail.data === 'string' ? JSON.parse(e.detail.data) : e.detail.data;
           if (data.productionStages) {
             setStagesCount(data.productionStages.length);
@@ -291,28 +313,19 @@ export default function ChatInterface() {
       const { index } = e.detail;
       setCurrentStage(index);
       setMessages((prev) => {
-        const filteredMessages = prev.filter(m => m.component !== 'multi-production-stages');
+        const selectorIndex = prev.findIndex(m => m.component === 'stage-selector');
         return [
-          ...filteredMessages,
+          ...prev.slice(0, selectorIndex + 2),
           { type: 'user', content: `Editing Stage ${index + 1}.` },
           { 
             type: 'bot', 
             content: `Edit details for Stage ${index + 1}:`, 
-            component: 'multi-production-stages', 
+            component: 'production-stage', 
             props: { 
               'stage-index': index, 
               'stage-count': stagesCount,
-              'initial-data': JSON.stringify({
-                rawGoods: [{ name: '', qty: '', dimension: '' }],
-                outputGoods: [{ name: '', qty: '', dimension: '' }],
-                middleFields: {
-                  wastageEntries: [{ good: '', wastage: '', type: 'percent' }],
-                  time: '',
-                  outsource: 'no'
-                },
-                ...(updatedStagesData[completedStage + 1] || {})
-              }),
-              'goods-list': JSON.stringify(goodsList)
+              'initial-data': JSON.stringify(stagesData[index] || {}), 
+              'is-last': index === stagesCount - 1 
             } 
           }
         ];
@@ -320,7 +333,7 @@ export default function ChatInterface() {
     };
     document.addEventListener('edit', handleEditStage);
     return () => document.removeEventListener('edit', handleEditStage);
-  }, [stagesData, stagesCount, goodsList]);
+  }, [stagesData, stagesCount]);
 
   useEffect(() => {
     const handleReset = () => {
@@ -362,10 +375,12 @@ export default function ChatInterface() {
         }))
       };
       
+      // Convert to string with JSON.stringify to ensure proper serialization
       const stringifiedData = JSON.stringify(formattedData);
       console.log('Stringified data:', stringifiedData);
       
       setMessages(prev => {
+        // Remove any existing production-summary components
         const filteredMessages = prev.filter(m => m.component !== 'production-summary');
         return [
           ...filteredMessages,
@@ -376,7 +391,7 @@ export default function ChatInterface() {
             component: 'production-summary', 
             props: { 
               data: stringifiedData,
-              stages: stringifiedData,
+              stages: stringifiedData, // Pass the same data to both props
               showedit: true,
               showsubmit: true
             } 
@@ -392,7 +407,7 @@ export default function ChatInterface() {
     } else {
       setMessages(prev => [
         ...prev,
-        { type: ' BOT', content: 'Please fill in all required fields in all stages before submitting.' }
+        { type: 'bot', content: 'Please fill in all required fields in all stages before submitting.' }
       ]);
     }
   };
@@ -400,19 +415,18 @@ export default function ChatInterface() {
   const handleEditWorkflow = () => {
     console.log('handleEditWorkflow called with', { stagesCount, stagesData });
     if (stagesData.length > 0) {
-      setCurrentStage(0);
       setMessages(prev => {
-        const filteredMessages = prev.filter(m => !['multi-production-stages', 'production-summary'].includes(m.component));
+        // Filter out previous edit/summary messages
+        const baseMessages = prev.filter(m => !['multi-production-stages', 'production-summary'].includes(m.component));
         return [
-          ...filteredMessages,
+          ...baseMessages,
           {
             type: 'bot',
-            content: `Edit Production Workflow (Stage 1 of ${stagesData.length}):`,
+            content: `Edit Production Workflow (${stagesData.length} stages):`,
             component: 'multi-production-stages',
             props: { 
               stagesCount: stagesData.length,
-              'stage-index': 0,
-              'initial-data': JSON.stringify(stagesData[0])
+              'initial-data': JSON.stringify(stagesData)
             }
           }
         ];
@@ -489,7 +503,10 @@ export default function ChatInterface() {
     const updatedStagesData = [...stagesData];
     updatedStagesData[stageIndex] = newData;
     setStagesData(updatedStagesData);
-    clearValidationErrors();
+    
+    // Clear any validation error messages
+    setMessages(prev => prev.filter(m => 
+      !m.content.includes('Please fill in all required fields')));
   };
 
   const renderComponent = (component, props) => {
@@ -498,22 +515,30 @@ export default function ChatInterface() {
         return <stage-selector {...props} />;
       case 'production-stage':
         return <production-stage {...props} onInput={clearValidationErrors} />;
-      case 'multi-production-stages': {
-        // Always use the currentStage and its data for rendering
-        const stageIndex = typeof props['stage-index'] === 'number' ? props['stage-index'] : currentStage;
-        const initialData = stagesData[stageIndex] || createEmptyStage();
+      case 'multi-production-stages':
         return (
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '16px' }}>
-          <production-stage
-            stage-index={stageIndex}
-            stage-count={stagesCount} // not props['stage-count'] to ensure it's always accurate
-            goods-list={JSON.stringify(goodsList)}
-            initial-data={JSON.stringify(initialData)}
-            onInput={clearValidationErrors}
-          ></production-stage>
-        </div>
-      );
-      }
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            padding: '16px'
+          }}>
+            <production-stage
+              stage-index={currentStage}
+              stage-count={stagesCount}
+              goods-list={JSON.stringify(goodsList)}
+              initial-data={JSON.stringify(stagesData[currentStage] || {
+                rawGoods: [{ name: '', qty: '', dimension: '' }],
+                outputGoods: [{ name: '', qty: '', dimension: '' }],
+                middleFields: {
+                  wastageEntries: [{ good: '', wastage: '', type: 'percent' }],
+                  time: '',
+                  outsource: 'no'
+                }
+              })}
+              onInput={clearValidationErrors}
+            ></production-stage>
+          </div>
+        );
       case 'production-summary':
         return <production-summary {...props} />;
       default:
