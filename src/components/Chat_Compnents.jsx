@@ -1,4 +1,4 @@
-  // Clears validation error messages when any input changes
+// Clears validation error messages when any input changes
   const clearValidationErrors = () => {
     setMessages(prev => prev.filter(m => !m.content.includes('Please fill in all required fields')));
   };
@@ -132,65 +132,103 @@ export default function ChatInterface() {
   }, []);
 
   useEffect(() => {
+  const handlePrevStage = (e) => {
+    const { stageIndex, stageData } = e.detail;
+    const updatedStagesData = [...stagesData];
+    updatedStagesData[stageIndex] = stageData;
+    setStagesData(updatedStagesData);
+    if (stageIndex > 0) {
+      setCurrentStage(stageIndex - 1);
+      setMessages(prev => {
+        const filteredMessages = prev.filter(m => m.component !== 'production-stage');
+        return [
+          ...filteredMessages,
+          {
+            type: 'bot',
+            content: `Please fill in the details for Stage ${stageIndex}`,
+            component: 'production-stage',
+            props: {
+              'stage-index': stageIndex - 1,
+              'stage-count': stagesCount,
+              'initial-data': JSON.stringify(updatedStagesData[stageIndex - 1] || {
+                rawGoods: [{ name: '', qty: '', dimension: '' }],
+                outputGoods: [{ name: '', qty: '', dimension: '' }],
+                middleFields: {
+                  wastageEntries: [{ good: '', wastage: '', type: 'percent' }],
+                  time: '',
+                  outsource: 'no'
+                }
+              }),
+              'goods-list': JSON.stringify(goodsList)
+            }
+          }
+        ];
+      });
+    }
+  };
+  document.addEventListener('prev-stage', handlePrevStage);
+  return () => document.removeEventListener('prev-stage', handlePrevStage);
+}, [stagesData, stagesCount, goodsList]);
+
+  useEffect(() => {
     const handleStageComplete = (e) => {
       const stageData = e.detail;
-      const completedStage = parseInt(e.target.getAttribute('stage-index'));
+      const completedStage = currentStage;
       const updatedStagesData = [...stagesData];
       updatedStagesData[completedStage] = stageData;
       setStagesData(updatedStagesData);
 
-      // Enhanced validation check
-      const allFieldsFilled = updatedStagesData.length === stagesCount && 
-        updatedStagesData.every(stage => {
-          if (!stage) return false;
-          
-          // Check raw goods
-          const validRawGoods = stage.rawGoods && 
-            stage.rawGoods.length > 0 && 
-            stage.rawGoods.every(g => g.name && g.name.trim() && g.qty && g.dimension);
-          
-          // Check output goods
-          const validOutputGoods = stage.outputGoods && 
-            stage.outputGoods.length > 0 && 
-            stage.outputGoods.every(g => g.name && g.name.trim() && g.qty && g.dimension);
-          
-          // Check middle fields
-          const validMiddleFields = stage.middleFields && 
-            stage.middleFields.time && 
-            stage.middleFields.outsource &&
-            stage.middleFields.wastageEntries &&
-            stage.middleFields.wastageEntries.every(entry => 
-              (!entry.good && !entry.wastage) // Allow empty entries
-              || (entry.good && entry.wastage && entry.type) // Or complete entries
-            );
-          
-          return validRawGoods && validOutputGoods && validMiddleFields;
-        });
-
-      // Update messages based on validation state
-      if (allFieldsFilled) {
+      if (completedStage < stagesCount - 1) {
+        // Move to the next stage
+        setCurrentStage(completedStage + 1);
         setMessages(prev => {
-          // Remove any error messages
-          const filteredMessages = prev.filter(m => 
-            !m.content.includes('Please fill in all required fields'));
-          
-          // Add or update completion message
-          const hasSubmitMessage = filteredMessages.some(m => 
-            m.content === 'You can now submit the complete workflow.');
-          
-          if (!hasSubmitMessage) {
-            return [...filteredMessages, 
-              { type: 'bot', content: 'You can now submit the complete workflow.' }
-            ];
-          }
-          return filteredMessages;
+          const filteredMessages = prev.filter(m => m.component !== 'production-stage');
+          return [
+            ...filteredMessages,
+            {
+              type: 'bot',
+              content: `Please fill in the details for Stage ${completedStage + 2}:`,
+              component: 'production-stage',
+              props: {
+                'stage-index': completedStage + 1,
+                'stage-count': stagesCount,
+                'initial-data': JSON.stringify(updatedStagesData[completedStage + 1] || {}),
+                'goods-list': JSON.stringify(goodsList)
+              }
+            }
+          ];
+        });
+      } else {
+        // Show summary after the last stage
+        const formattedData = updatedStagesData.map((stage, idx) => ({
+          stageNumber: idx + 1,
+          ...stage
+        }));
+
+        setMessages(prev => {
+          const filteredMessages = prev.filter(m => m.component !== 'production-stage');
+          return [
+            ...filteredMessages,
+            { type: 'bot', content: 'All stages completed! Here is your workflow summary:' },
+            {
+              type: 'bot',
+              content: 'Production Workflow Summary:',
+              component: 'production-summary',
+              props: {
+                data: JSON.stringify({ productionStages: formattedData }),
+                stages: formattedData,
+                showedit: true,
+                showsubmit: true
+              }
+            }
+          ];
         });
       }
     };
 
     document.addEventListener('complete', handleStageComplete);
     return () => document.removeEventListener('complete', handleStageComplete);
-  }, [stagesCount, stagesData, messages]);
+  }, [stagesCount, stagesData, goodsList]);
 
   useEffect(() => {
     const handleSummaryEdit = () => {
@@ -202,7 +240,8 @@ export default function ChatInterface() {
       let data = undefined;
       if (e && e.detail && e.detail.data) {
         try {
-          data = JSON.parse(e.detail.data);
+          // Ensure the data is properly serialized as JSON
+          data = typeof e.detail.data === 'string' ? JSON.parse(e.detail.data) : e.detail.data;
           if (data.productionStages) {
             setStagesCount(data.productionStages.length);
             setStagesData(data.productionStages.map(stage => ({
@@ -438,45 +477,24 @@ export default function ChatInterface() {
         return (
           <div style={{ 
             display: 'flex', 
-            flexDirection: 'column', 
-            gap: '32px',
-            maxHeight: isEnlarged ? 'calc(100vh - 200px)' : '400px',
-            overflowY: 'auto',
+            flexDirection: 'column',
             padding: '16px'
           }}>
-            {Array.from({ length: props.stagesCount }).map((_, idx) => (
-              <div 
-                key={idx} 
-                style={{ 
-                  border: '1px solid #88bfe8', 
-                  borderRadius: 8, 
-                  background: '#fff', 
-                  boxShadow: '0 2px 8px rgba(136,191,232,0.08)',
-                  padding: '24px',
-                  position: 'relative'
-                }}
-              >
-                <div style={{ 
-                  padding: '16px', 
-                  fontWeight: 700, 
-                  color: '#340368', 
-                  fontFamily: 'Caveat, cursive', 
-                  fontSize: '1.2rem',
-                  textAlign: 'center',
-                  borderBottom: '1px solid #88bfe8',
-                  marginBottom: '16px'
-                }}>
-                  Production Stage {idx + 1}
-                </div>
-                <production-stage
-                  stage-index={idx}
-                  stage-count={props.stagesCount}
-                  goods-list={JSON.stringify(goodsList)}
-                  initial-data={JSON.stringify((props['initial-data'] ? JSON.parse(props['initial-data'])[idx] : {}) || {})}
-                  onInput={clearValidationErrors}
-                ></production-stage>
-              </div>
-            ))}
+            <production-stage
+              stage-index={currentStage}
+              stage-count={stagesCount}
+              goods-list={JSON.stringify(goodsList)}
+              initial-data={JSON.stringify(stagesData[currentStage] || {
+                rawGoods: [{ name: '', qty: '', dimension: '' }],
+                outputGoods: [{ name: '', qty: '', dimension: '' }],
+                middleFields: {
+                  wastageEntries: [{ good: '', wastage: '', type: 'percent' }],
+                  time: '',
+                  outsource: 'no'
+                }
+              })}
+              onInput={clearValidationErrors}
+            ></production-stage>
           </div>
         );
       case 'production-summary':

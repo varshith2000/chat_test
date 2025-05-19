@@ -195,9 +195,39 @@ class ProductionStage extends HTMLElement {    constructor() {
           background: #b5b5b5;
           cursor: not-allowed;
         }
+        .nav-buttons {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 16px;
+        }
+        .nav-button {
+          background: #88bfe8;
+          color: #ffffff;
+          border: none;
+          border-radius: 8px;
+          padding: 10px 16px;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .nav-button.prev {
+          background: #f0f0f0;
+          color: #340368;
+        }
+        .nav-button:disabled {
+          background: #b5b5b5;
+          cursor: not-allowed;
+        }
+        .stage-header {
+          text-align: center;
+          margin-bottom: 24px;
+        }
       </style>
       <form class="form">
         <div class="container">
+          <div class="stage-header">
+            <h3>Stage ${this.stageIndex + 1} of ${this.stageCount}</h3>
+          </div>
           <!-- Raw/Intermediate Goods -->
           <div class="section">
             <h3>Raw/Intermediate Goods</h3>
@@ -247,18 +277,34 @@ class ProductionStage extends HTMLElement {    constructor() {
           </div>
         </div>
         <div class="footer">
+          <div class="nav-buttons">
+          ${this.stageIndex > 0 ? `
+            <button type="button" class="nav-button prev" id="prev-stage">
+              ← Previous Stage
+            </button>
+          ` : ''}
+          
           ${this.stageIndex === this.stageCount - 1 ? `
             ${this.showErrors && Object.keys(this.validationErrors).length > 0 ? `
               <div class="error-message">Please fix the validation errors before proceeding</div>
             ` : ''}
             <button 
               type="submit" 
-              class="finish-button"
+              class="nav-button next"
               ${this.showErrors && Object.keys(this.validationErrors).length > 0 ? 'disabled' : ''}
             >
-              Finish
+              Finish and Show Summary
             </button>
-          ` : ''}
+          ` : `
+            <button 
+              type="submit" 
+              class="nav-button next"
+              ${this.showErrors && Object.keys(this.validationErrors).length > 0 ? 'disabled' : ''}
+            >
+              Save and Next Stage →
+            </button>
+          `}
+        </div>
         </div>
         <confirmation-modal
           open="${this.modal.open}"
@@ -345,13 +391,9 @@ class ProductionStage extends HTMLElement {    constructor() {
       this.showErrors = true;
       const isValid = this.validateForm();
       if (isValid) {
+        this.showErrors = false; // Reset showErrors when validation passes
         const stageData = {
           rawGoods: this.rawGoods.map(good => ({
-            name: good.name || '',
-            qty: good.qty || '',
-            dimension: good.dimension || ''
-          })),
-          outputGoods: this.outputGoods.map(good => ({
             name: good.name || '',
             qty: good.qty || '',
             dimension: good.dimension || ''
@@ -364,9 +406,14 @@ class ProductionStage extends HTMLElement {    constructor() {
             })),
             time: this.middleFields.time || '',
             outsource: this.middleFields.outsource || 'no'
-          }
+          },
+          outputGoods: this.outputGoods.map(good => ({
+            name: good.name || '',
+            qty: good.qty || '',
+            dimension: good.dimension || ''
+          }))
         };
-        console.log('Submitting stage data from ProductionStage:', stageData);
+        
         this.dispatchEvent(new CustomEvent('complete', {
           detail: stageData,
           bubbles: true,
@@ -375,6 +422,23 @@ class ProductionStage extends HTMLElement {    constructor() {
       }
       this.render();
     });
+
+    const prevButton = this.shadowRoot.querySelector('#prev-stage');
+    if (prevButton) {
+      prevButton.addEventListener('click', () => {
+        const stageData = {
+          rawGoods: this.rawGoods,
+          outputGoods: this.outputGoods,
+          middleFields: this.middleFields
+        };
+
+        this.dispatchEvent(new CustomEvent('prev-stage', {
+          detail: { stageIndex: this.stageIndex, stageData },
+          bubbles: true,
+          composed: true
+        }));
+      });
+    }
   }
 }
 
