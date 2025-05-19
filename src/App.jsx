@@ -12,6 +12,16 @@ function App() {
       <div className="chat-container">
         <ChatInterface />
       </div>
+      {/* <Router>
+      <div className="min-h-screen bg-white">
+        <main>
+          <Routes>
+            <Route path="/" element={<ChatBot />} />
+            <Route path="/sku" element={<SkuPage />} />
+          </Routes>
+        </main>
+      </div>
+    </Router> */}
     </>
   )
 }
