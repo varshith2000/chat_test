@@ -1,11 +1,12 @@
-class ProductionStage extends HTMLElement {    constructor() {
+class ProductionStage extends HTMLElement {
+  constructor() {
     super();
     this.attachShadow({ mode: 'open' });
     this.stageIndex = parseInt(this.getAttribute('stage-index') || '0');
     this.stageCount = parseInt(this.getAttribute('stage-count') || '1');
     this.initialData = JSON.parse(this.getAttribute('initial-data') || '{}');
     console.log('ProductionStage initialized with initial-data:', this.initialData);
-    this.goodsList = [];
+    this.goodsList = JSON.parse(this.getAttribute('goods-list') || '[]');
     this.rawGoods = this.initialData.rawGoods || [{ name: '', qty: '', dimension: '' }];
     this.outputGoods = this.initialData.outputGoods || [{ name: '', qty: '', dimension: '' }];
     this.middleFields = this.initialData.middleFields || {
@@ -31,13 +32,14 @@ class ProductionStage extends HTMLElement {    constructor() {
     } else if (name === 'goods-list') {
       try {
         this.goodsList = JSON.parse(newValue || '[]');
+        console.log('Updated goods-list:', this.goodsList);
         this.render();
       } catch (error) {
         console.error('Error parsing goods-list:', error);
       }
     } else if (name === 'initial-data') {
       try {
-        this.initialData = JSON.parse(newValue || '{}');
+        this.initialData = JSON.parse(JSON.stringify(JSON.parse(newValue || '{}')));
         console.log('ProductionStage updated with initial-data:', this.initialData);
         this.rawGoods = this.initialData.rawGoods || [{ name: '', qty: '', dimension: '' }];
         this.outputGoods = this.initialData.outputGoods || [{ name: '', qty: '', dimension: '' }];
@@ -46,14 +48,15 @@ class ProductionStage extends HTMLElement {    constructor() {
           time: '',
           outsource: 'no'
         };
+        this.render();
       } catch (error) {
         console.error('Error parsing initial-data:', error);
         this.initialData = {};
         this.rawGoods = [{ name: '', qty: '', dimension: '' }];
         this.outputGoods = [{ name: '', qty: '', dimension: '' }];
         this.middleFields = { wastageEntries: [{ good: '', wastage: '', type: 'percent' }], time: '', outsource: 'no' };
+        this.render();
       }
-      this.render();
     }
   }
 
@@ -95,7 +98,6 @@ class ProductionStage extends HTMLElement {    constructor() {
   updateGoodsList(newGood) {
     if (!this.goodsList.includes(newGood)) {
       this.goodsList = [...this.goodsList, newGood];
-      // Dispatch event to update all stages with new goods list
       this.dispatchEvent(new CustomEvent('goods-list-update', {
         detail: { goodsList: this.goodsList },
         bubbles: true,
@@ -314,7 +316,6 @@ class ProductionStage extends HTMLElement {    constructor() {
     `;
 
     this.shadowRoot.querySelectorAll('goods-input-row').forEach(row => {
-      // Clear validation errors on any input
       row.addEventListener('input', () => {
         this.showErrors = false;
         this.validationErrors = {};
@@ -391,7 +392,7 @@ class ProductionStage extends HTMLElement {    constructor() {
       this.showErrors = true;
       const isValid = this.validateForm();
       if (isValid) {
-        this.showErrors = false; // Reset showErrors when validation passes
+        this.showErrors = false;
         const stageData = {
           rawGoods: this.rawGoods.map(good => ({
             name: good.name || '',
@@ -413,12 +414,14 @@ class ProductionStage extends HTMLElement {    constructor() {
             dimension: good.dimension || ''
           }))
         };
-        
+        console.log(`Submitting stage ${this.stageIndex + 1} with data:`, stageData);
         this.dispatchEvent(new CustomEvent('complete', {
           detail: stageData,
           bubbles: true,
           composed: true
         }));
+      } else {
+        console.log('Validation errors:', this.validationErrors);
       }
       this.render();
     });
@@ -431,7 +434,7 @@ class ProductionStage extends HTMLElement {    constructor() {
           outputGoods: this.outputGoods,
           middleFields: this.middleFields
         };
-
+        console.log(`Navigating to previous stage from ${this.stageIndex + 1} with data:`, stageData);
         this.dispatchEvent(new CustomEvent('prev-stage', {
           detail: { stageIndex: this.stageIndex, stageData },
           bubbles: true,
