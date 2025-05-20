@@ -49,12 +49,7 @@ class ProductionSummary extends HTMLElement {
   render() {
     const showEdit = this.getAttribute('showedit') !== 'false';
     const showSubmit = this.getAttribute('showsubmit') !== 'false';
-    // Prioritize this.data.productionStages over this.stages to avoid rendering issues
-    const summaryData = (this.data && this.data.productionStages && Array.isArray(this.data.productionStages)) 
-      ? this.data.productionStages 
-      : (this.stages && Array.isArray(this.stages)) 
-        ? this.stages 
-        : [];
+    const summaryData = this.stages && Array.isArray(this.stages) ? this.stages : [];
     console.log('Rendering summary with final summaryData:', summaryData);
 
     this.shadowRoot.innerHTML = `
@@ -81,7 +76,7 @@ class ProductionSummary extends HTMLElement {
           font-weight: 700;
         }
         .action-buttons {
-          display: flex;
+          display: zengin: flex;
           gap: 12px;
         }
         .button {
@@ -327,7 +322,6 @@ class ProductionSummary extends HTMLElement {
     const submitBtn = this.shadowRoot.querySelector('#submit-workflow');
     if (submitBtn) {
       submitBtn.addEventListener('click', () => {
-        // Disable both edit and submit buttons
         submitBtn.disabled = true;
         submitBtn.style.opacity = '0.5';
         submitBtn.style.cursor = 'not-allowed';
@@ -339,7 +333,6 @@ class ProductionSummary extends HTMLElement {
           editBtn.style.cursor = 'not-allowed';
         }
         
-        // Also disable individual stage edit buttons
         this.shadowRoot.querySelectorAll('.edit-button').forEach(btn => {
           btn.disabled = true;
           btn.style.opacity = '0.5';
