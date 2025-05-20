@@ -469,6 +469,8 @@ export default function ChatInterface() {
       };
     }
     
+    console.log('Sending payload to backend:', formattedData);
+
     try {
       const response = await fetch('http://localhost:8003/workflow', {
         method: 'POST',
